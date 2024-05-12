@@ -1,0 +1,46 @@
+name: Deploy to Caprover
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest 
+
+    steps:
+      - uses: actions/checkout@v4 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies  # see also, package.json
+        run: npm install
+
+      - name: Build with Vite
+        run: npm run build    # i.e. "vite build"
+
+      - name: Include Dockerfile and CapRover configuration
+        run: cp Dockerfile dist/ && cp captain-definition dist/
+
+      # Make a tarball of the dist/ folder for deployment
+      # and also include the Dockerfile and CapRover configuration
+      - uses: a7ul/tar-action@v1.2.0
+        with:
+          command: c      # "c" means "create" (new tarball)
+          cwd: "./dist"  
+          files: |
+            ./ 
+          outPath: deploy.tar
+      # Deploy the tarball to CapRover, using the CapRover GitHub Action
+      # Make sure you add CapRover Secrets to Repository Settings 
+      # i.e. Secrets and Variables > Actions > Repository Secrets
+      # SERVER: e.g. https://captain.example.com 
+      # APP: the name of the app in CapRover (e.g. "my-app")
+      # TOKEN: generated in CapRover under "Deployment" 
+      - name: Deploy App to Caprover
+        uses: caprover/deploy-from-github@v1.1.2
+        with:
+          server: '${{ secrets.SERVER }}'
+          app: '${{ secrets.APP }}'
+          token: '${{ secrets.TOKEN }}'
