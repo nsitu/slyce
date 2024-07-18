@@ -1,9 +1,9 @@
+// fileHandler.mjs
 
-
-
-function dragAndDrop(selector, handler) {
-
+function fileHandler(selector, inputSelector, handler) {
     const dropArea = document.querySelector(selector);
+    const fileInput = document.querySelector(inputSelector);
+    const browseBtn = dropArea.querySelector('button');
 
     // Prevent default drag behaviors
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -33,10 +33,20 @@ function dragAndDrop(selector, handler) {
     }
 
     // Handle dropped files
-    dropArea.addEventListener('drop', handler, false);
+    dropArea.addEventListener('drop', (e) => {
+        const files = e.dataTransfer?.files;
+        ([...files]).forEach(handler);
+    }, false);
 
+    // Setup file input
+    browseBtn.addEventListener('click', () => {
+        fileInput.click();
+    });
 
-
+    fileInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        ([...files]).forEach(handler);
+    });
 }
 
-export { dragAndDrop };
+export { fileHandler };

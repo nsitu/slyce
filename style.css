@@ -1,0 +1,21 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+#drop-area {
+    max-width: 50vw;
+    height: 200px;
+    border: 2px dashed #ccc;
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 20px auto;
+}
+
+#drop-area.hover {
+    background-color: #f0f0f0;
+}

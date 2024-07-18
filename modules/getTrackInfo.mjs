@@ -1,4 +1,6 @@
 // getTrackInfo.mjs
+// Use MP4Box to get information about a media file. 
+
 import MP4Box from 'mp4box';
 
 const getTrackInfo = (file) => {
