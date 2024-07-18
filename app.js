@@ -5,13 +5,12 @@ let config = {}
 let frameCount = 1;
 let frameNumber = 0;
 
-const canvasOne = document.querySelector("#canvasOne");
-const ctxOne = canvasOne.getContext("2d");
-const canvasTwo = document.querySelector("#canvasTwo");
-const ctxTwo = canvasTwo.getContext("2d");
+const canvas = document.createElement('canvas');
+document.body.appendChild(canvas);
+const ctx = canvas.getContext('2d');
+
 
 const demuxer = new WebDemuxer({
-    // TODO: check that this works in both development and production.
     wasmLoaderPath: `${window.location.href}ffmpeg.js`
 });
 
@@ -58,35 +57,26 @@ function handleFiles(files) {
 }
 
 // Setup a VideoDecoder
-const videoDecoder = new VideoDecoder({
+const decoder = new VideoDecoder({
     output: handleDecodedFrame,
     error: e => console.error('Video decode error:', e)
 });
 
 function handleDecodedFrame(videoFrame) {
-    // Draw the frame to Canvas
-    // ctx.drawImage(videoFrame, 0, 0, canvas.width, canvas.height);
-
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
-    // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
+    // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) 
 
-    ctxOne.drawImage(videoFrame, 0, 0, config.codedWidth, 1, 0, frameNumber, canvasOne.width, 1)
-    ctxTwo.drawImage(videoFrame, 0, (config.codedHeight - 1), config.codedWidth, 1, 0, frameNumber, canvasTwo.width, 1)
+    ctx.drawImage(videoFrame, 0, 0, config.codedWidth, 1, 0, frameNumber, canvas.width, 1)
     frameNumber++;
     videoFrame.close();
 }
 
 
-
-
-
 async function processFile(file) {
+
     try {
         const metaData = await getMediaInfo(file)
         frameCount = metaData.FrameCount
-
-        canvasOne.height = frameCount;
-        canvasTwo.height = frameCount;
 
         console.log(metaData.FrameCount)
 
@@ -100,13 +90,21 @@ async function processFile(file) {
         let info = await demuxer.getAVStream();
         console.log(info)
 
-
-
-
         console.log(info.nb_frames)
         config = await demuxer.getVideoDecoderConfig();
         console.log(config)
-        videoDecoder.configure({
+        if (VideoDecoder.isConfigSupported(config)) {
+            console.log(`Codec ${config.codec} is supported`);
+        }
+        else {
+            console.error(`Codec ${config.codec} is not supported`);
+        }
+
+
+        canvas.width = config.codedWidth;
+        canvas.height = frameCount;
+
+        decoder.configure({
             codec: config.codec,
             width: config.codedWidth,
             height: config.codedHeight,
@@ -132,7 +130,7 @@ async function processFile(file) {
                     timestamp: value.timestamp,
                     data: value.data
                 });
-                videoDecoder.decode(chunk);
+                decoder.decode(chunk);
                 decodePackets();
             } catch (readError) {
                 console.error('Error while reading packets:', readError);
