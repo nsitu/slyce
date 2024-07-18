@@ -3,13 +3,18 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Hello</title>
+    <title>WebCodecsTest</title>
     <link
         rel="icon"
         href="ffmpeg.svg"
         type="image/svg+xml"
     >
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
         #drop-area {
             width: 300px;
             height: 200px;
@@ -18,7 +23,7 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            margin: 20px;
+            margin: 20px auto;
         }
 
         #drop-area.hover {
@@ -28,10 +33,34 @@
 </head>
 
 <body>
-    <h1>Web Codecs</h1>
-    <p>Drag and Drop a video file to start.</p>
+    <h1>Web Codecs Test</h1>
+    <p>This demo creates an artistic
+        <a
+            target="_blank"
+            href="https://en.wikipedia.org/wiki/Slit-scan_photography"
+        >
+            cross section of a video
+        </a> using
+        <a
+            target="_blank"
+            href="https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API"
+        >
+            WebCodecs</a>,
+        <a
+            target="_blank"
+            href="https://github.com/ForeverSc/web-demuxer"
+        >
+            WebDemuxer</a>, and
+        <a
+            target="_blank"
+            href="https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API"
+        >
+            Canvas</a>.
+
+    </p>
+    <p>Each frame becomes one row of pixels. Canvas dimensions are set based on frame count.</p>
     <div id="drop-area">
-        Drag and drop your MP4 file here
+        Drag and drop a video here.
     </div>
     <script
         type="module"
