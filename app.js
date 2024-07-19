@@ -1,6 +1,5 @@
 import { WebDemuxer } from "web-demuxer"
 import { fileHandler } from './modules/fileHandler.mjs'
-import { getMediaInfo } from './modules/getMediaInfo.mjs'
 import canvasSize from 'canvas-size';
 import { fps } from './modules/fps.mjs'
 
@@ -10,7 +9,6 @@ let frameCount = 0
 let frameNumber = 0
 let currentFile = ''
 
-
 // status box
 const status = document.createElement('div')
 document.body.appendChild(status)
@@ -19,7 +17,6 @@ document.body.appendChild(status)
 const canvas = document.createElement('canvas')
 const ctx = canvas.getContext('2d')
 document.body.appendChild(canvas)
-
 
 // setup WebDemuxer
 const demuxer = new WebDemuxer({
@@ -54,15 +51,12 @@ async function processFile(file) {
     try {
         setStatus(`Checking canvas size limits.`)
         const { height: maxCanvasHeight } = await canvasSize.maxArea();
-        setStatus(`Loading MetaData: ${file.name}`)
-        const metaData = await getMediaInfo(file)
         setStatus(`Loading Demuxer`)
-        frameCount = metaData.FrameCount
         await demuxer.load(file);
-        setStatus(`Loading Stream`)
+        setStatus(`Loading Stream Info`)
         let info = await demuxer.getAVStream();
+        frameCount = Number(info.nb_frames)
         console.log('getAVStream', info)
-        // console.log('info.nb_frames', info.nb_frames)
         setStatus(`Loading Video Decoder Config`)
         config = await demuxer.getVideoDecoderConfig();
         console.log(config)
