@@ -19,3 +19,7 @@ body {
 #drop-area.hover {
     background-color: #f0f0f0;
 }
+
+canvas {
+    max-width: 100%;
+}
