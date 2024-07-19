@@ -6,10 +6,9 @@ import { fps } from './modules/fps.mjs'
 
 // setup variables
 let config = {}
-let frameCount = 1
+let frameCount = 0
 let frameNumber = 0
-let readNumber = 0
-
+let currentFile = ''
 
 
 // status box
@@ -48,11 +47,13 @@ fileHandler('#drop-area', '#file-input', processFile)
 
 
 async function processFile(file) {
+    // reset counter for a new file
+    frameCount = 0
+    frameNumber = 0
+    currentFile = file.name
     try {
         setStatus(`Checking canvas size limits.`)
         const { height: maxCanvasHeight } = await canvasSize.maxArea();
-
-
         setStatus(`Loading MetaData: ${file.name}`)
         const metaData = await getMediaInfo(file)
         setStatus(`Loading Demuxer`)
@@ -60,7 +61,7 @@ async function processFile(file) {
         await demuxer.load(file);
         setStatus(`Loading Stream`)
         let info = await demuxer.getAVStream();
-        console.log('info', info)
+        console.log('getAVStream', info)
         // console.log('info.nb_frames', info.nb_frames)
         setStatus(`Loading Video Decoder Config`)
         config = await demuxer.getVideoDecoderConfig();
@@ -96,13 +97,20 @@ async function processFile(file) {
 
         async function decodePackets() {
             try {
+
+                if (currentFile != file.name) {
+                    // if a new file is loaded, abort processing the  current file 
+                    setStatus(`Aborted.`)
+                    // maybe we need to close the reader and stream here
+                    return;
+                }
+
                 // get  the next chunk in the stream's internal queue.
                 const { done, value } = await reader.read();
 
                 let message = `FPS: ${fps()} </br>
                     Queue size: ${decoder.decodeQueueSize}.<br/>
                     Decoding frame: ${frameNumber} of ${frameCount}<br/>`
-                readNumber++;
 
                 if (done) {
                     setStatus(`${frameCount} frames decoded. Done.`)
