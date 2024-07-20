@@ -9,6 +9,12 @@ let frameCount = 0
 let frameNumber = 0
 let currentFile = ''
 
+
+// Pause/resume decoder with promises
+let resumeDecode
+let pauseDecode = new Promise(resolve => resumeDecode = resolve)
+
+
 // status box
 const status = document.createElement('div')
 document.body.appendChild(status)
@@ -29,9 +35,14 @@ const decoder = new VideoDecoder({
     output: (videoFrame) => {
         // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
         // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) 
-        ctx.drawImage(videoFrame, 0, 0, config.codedWidth, 1, 0, frameNumber, canvas.width, 1)
+        // ctx.drawImage(videoFrame, 0, 0, config.codedWidth, 1, 0, frameNumber, canvas.width, 1)
+        // console.log('videoFrame', videoFrame)
         frameNumber++;
         videoFrame.close();
+        if (resumeDecode) {
+            resumeDecode()
+            pauseDecode = new Promise(resolve => resumeDecode = resolve)
+        }
     },
     error: e => console.error('Video decode error:', e)
 });
@@ -116,6 +127,9 @@ async function processFile(file) {
                     timestamp: value.timestamp,
                     data: value.data
                 });
+                if (decoder.decodeQueueSize > 1) {
+                    await pauseDecode
+                }
                 decoder.decode(chunk)
                 setStatus(message)
                 decodePackets()
