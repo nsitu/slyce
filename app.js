@@ -18,9 +18,10 @@ const canvas = document.createElement('canvas')
 const ctx = canvas.getContext('2d')
 document.body.appendChild(canvas)
 
-// setup WebDemuxer
+// Setup WebDemuxer
+// NOTE: vite.config.mjs copies wasm files from node_modules to public folder
 const demuxer = new WebDemuxer({
-    wasmLoaderPath: `${window.location.href}ffmpeg.js`
+    wasmLoaderPath: `${window.location.href}public/ffmpeg.js`
 });
 
 // Setup VideoDecoder
