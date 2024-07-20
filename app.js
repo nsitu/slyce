@@ -35,13 +35,15 @@ const decoder = new VideoDecoder({
     output: (videoFrame) => {
         // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
         // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) 
-        // ctx.drawImage(videoFrame, 0, 0, config.codedWidth, 1, 0, frameNumber, canvas.width, 1)
+        ctx.drawImage(videoFrame, 0, 0, config.codedWidth, 1, 0, frameNumber, canvas.width, 1)
         // console.log('videoFrame', videoFrame)
         frameNumber++;
         videoFrame.close();
         if (resumeDecode) {
-            resumeDecode()
-            pauseDecode = new Promise(resolve => resumeDecode = resolve)
+            // Resolve the pauseDecode promise, allowing the next frame to be decoded
+            resumeDecode();
+            // Reinitialize pauseDecode and resumeDecode for the next frame
+            pauseDecode = new Promise(resolve => resumeDecode = resolve);
         }
     },
     error: e => console.error('Video decode error:', e)
@@ -122,16 +124,25 @@ async function processFile(file) {
                     setStatus(`${frameCount} frames decoded. Done.`)
                     return;
                 }
-                const chunk = new EncodedVideoChunk({
-                    type: value.key ? 'key' : 'delta',
+                console.log('value', value)
+                // TODO: doublecheck these parameters.
+                const chunkOptions = {
+                    type: value.keyframe ? 'key' : 'delta',
                     timestamp: value.timestamp,
-                    data: value.data
-                });
+                    duration: value.duration,
+                    data: value.data,
+                    transfer: [value.data.buffer]
+                }
+                // console.log('chunkOptions', chunkOptions)
+                const chunk = new EncodedVideoChunk(chunkOptions);
                 if (decoder.decodeQueueSize > 1) {
                     await pauseDecode
                 }
                 decoder.decode(chunk)
                 setStatus(message)
+                // Introduce a slight delay to allow garbage collection
+                // This would cap the speed to ~60fps.
+                // await new Promise(requestAnimationFrame);
                 decodePackets()
             } catch (readError) {
                 console.error('Error while reading packets:', readError);
