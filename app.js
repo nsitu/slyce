@@ -33,6 +33,22 @@ const demuxer = new WebDemuxer({
 // Setup VideoDecoder
 const decoder = new VideoDecoder({
     output: (videoFrame) => {
+
+        // we may like to draw to multiple offscreen canvasses here.
+        // each canvas will hold a unique cross-section that is located 
+        // at a different position along a distribution.
+        // we can later animate these canvasses.
+
+        // i need to better understand width and height here.
+        // let's do some testing to see how different videos behave
+        // e.g. a pixel 6a video that is portrait orientation
+        // might still report as landscape, with rotation accomplished via metadata
+        // this is different from other videos where 
+        // the width and height are more directly swapped.
+
+
+
+
         // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
         // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) 
         ctx.drawImage(videoFrame, 0, 0, config.codedWidth, 1, 0, frameNumber, canvas.width, 1)
@@ -85,17 +101,21 @@ async function processFile(file) {
 
         // Set canvas dimensions to match video frameCount
         // up to the max canvas height supported by the browser
+
         canvas.width = config.codedWidth;
         canvas.height = Math.min(maxCanvasHeight, frameCount);
 
-        decoder.configure({
+        const options = {
             codec: config.codec,
             width: config.codedWidth,
             height: config.codedHeight,
             description: config.description,
             // hardwareAcceleration: 'prefer-hardware',
             // latencyMode: 'realtime'  // 'realtime', 'quality' etc.
-        });
+        }
+        console.log('options', options)
+
+        decoder.configure(options);
 
         // Read and decode video packets
         const stream = demuxer.readAVPacket(0, 0, 0, -1)
@@ -115,6 +135,7 @@ async function processFile(file) {
 
                 // get  the next chunk in the stream's internal queue.
                 const { done, value } = await reader.read();
+                console.log(value)
 
                 let message = `FPS: ${fps()} </br>
                     Queue size: ${decoder.decodeQueueSize}.<br/>
@@ -124,7 +145,7 @@ async function processFile(file) {
                     setStatus(`${frameCount} frames decoded. Done.`)
                     return;
                 }
-                console.log('value', value)
+
                 // TODO: doublecheck these parameters.
                 const chunkOptions = {
                     type: value.keyframe ? 'key' : 'delta',
@@ -133,9 +154,21 @@ async function processFile(file) {
                     data: value.data,
                     transfer: [value.data.buffer]
                 }
-                // console.log('chunkOptions', chunkOptions)
+                console.log('chunkOptions', chunkOptions)
                 const chunk = new EncodedVideoChunk(chunkOptions);
-                if (decoder.decodeQueueSize > 1) {
+
+                // Managing the Queue.
+                // Sometimes decoding involves inter-frame dependencies
+                // and looking ahead in the stream to decode a frame
+                // (e.g., a B-frame may depend on a future I-frame).
+                // On the other hand, let's not overload the decoder with a large queue.
+                // A safe balance: pause the queue after 20 frames 
+                // to let the decoder 'catch up'.
+                // TODO: Define and manage edge cases 
+                // where we need to look ahead more than 20 frames.
+                // TODO: Define memory implications of lookAhead == 300 frames.
+                const lookAhead = 20
+                if (decoder.decodeQueueSize > lookAhead) {
                     await pauseDecode
                 }
                 decoder.decode(chunk)
