@@ -5,8 +5,10 @@
     },
     "dependencies": {
         "canvas-size": "^2.0.0",
+        "mp4-muxer": "^4.3.3",
         "vite": "^5.2.10",
         "vite-plugin-static-copy": "^1.0.6",
-        "web-demuxer": "^1.0.4"
+        "web-demuxer": "^1.0.4",
+        "webm-muxer": "^4.0.1"
     }
 }

@@ -1,4 +1,4 @@
-// fileHandler.mjs
+// fps.mjs
 let fpsNow = 0;
 let lastFPSUpdate = 0;
 let timestamps = [];

@@ -18,12 +18,12 @@
 
 <body>
     <h1>Web Codecs Test</h1>
-    <p>This demo creates an artistic
+    <p>This demo animates artistic
         <a
             target="_blank"
             href="https://en.wikipedia.org/wiki/Slit-scan_photography"
         >
-            cross section of a video
+            cross sections of a video
         </a> using
         <a
             target="_blank"
@@ -42,7 +42,9 @@
             Canvas</a>.
 
     </p>
-    <p>One row of pixels is sampled from each frame. Canvas dimensions are set based on frame count.</p>
+    <p>Multiple cross sections are made from the video. Each cross section samples one row of pixels from each frame at
+        a given location. Cross sections are animated into a new video which amounts to a strategic swap of the time and
+        space dimensions. The strategic bit allows for a loopable back-and-forth sway.</p>
     <div id="drop-area">
         <img
             src="video-upload.svg"
