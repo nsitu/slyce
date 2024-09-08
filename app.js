@@ -3,8 +3,10 @@ import { WebDemuxer } from "web-demuxer"
 import { fileHandler } from './modules/fileHandler.mjs'
 import { CanvasManager } from './modules/canvasManager.mjs';
 import { setStatus } from './modules/statusBox.mjs'
+import { showFileInfo } from './modules/fileInfo.mjs'
 import { fps } from './modules/fps.mjs'
 import { Muxer, ArrayBufferTarget } from 'webm-muxer';
+import 'material-symbols';
 
 // TODO: account for videos that are taller than they are wide 
 // while most portrait videos are 1920x1080 with a rotation metadata
@@ -53,8 +55,8 @@ const decoder = new VideoDecoder({
 });
 
 
-// handle file uploads
-fileHandler('#drop-area', '#file-input', processFile)
+// handle file uploads and pass along the file to the processFile function
+fileHandler(processFile)
 
 
 async function processFile(file) {
@@ -73,6 +75,12 @@ async function processFile(file) {
         setStatus(`Loading Stream Info`)
         let info = await demuxer.getAVStream();
         frameCount = Number(info.nb_frames)
+
+        showFileInfo({
+            ...info,
+            name: file.name
+        })
+
         console.log('getAVStream', info)
         setStatus(`Loading Video Decoder Config`)
         config = await demuxer.getVideoDecoderConfig();
@@ -127,12 +135,9 @@ async function decodePackets(reader) {
 
         if (done) {
             setStatus(`${frameCount} frames decoded. Done.`)
-            // TODO: we could trigger a function here to 
             // encode and mux a new video using 
-            // all the canvasses as frames
-
+            // all the canvasses as frames 
             encodeVideo()
-
             return;
         }
 
@@ -156,7 +161,7 @@ async function decodePackets(reader) {
         // TODO: Define and manage edge cases 
         // where we need to look ahead more than 20 frames.
         // TODO: Define memory implications of lookAhead == 300 frames.
-        const lookAhead = 20
+        const lookAhead = 30
         if (decoder.decodeQueueSize > lookAhead) {
             await pauseDecode
         }
@@ -257,10 +262,10 @@ const downloadBlob = (blob) => {
     }
 
     let videoElement = document.createElement('video');
+    videoElement.style.maxWidth = '100%'
     videoElement.src = url;
     videoElement.controls = true;
     videoElement.loop = true;
-    videoElement.style.width = '100%'; // Adjust the style as needed
     videoContainer.appendChild(videoElement);
 
     videoElement.play(); // Start playing the video

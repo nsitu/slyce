@@ -1,9 +1,10 @@
 // fileHandler.mjs
 
-function fileHandler(selector, inputSelector, handler) {
-    const dropArea = document.querySelector(selector);
-    const fileInput = document.querySelector(inputSelector);
-    const browseBtn = dropArea.querySelector('button');
+function fileHandler(handler) {
+    const dropArea = document.body;
+    const fileInput = document.querySelector('#file-input');
+    const dropMessage = document.querySelector('#drop-message');
+    const browseButton = document.querySelector('#browse-button');
 
     // Prevent default drag behaviors
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -39,7 +40,7 @@ function fileHandler(selector, inputSelector, handler) {
     }, false);
 
     // Setup file input
-    browseBtn.addEventListener('click', () => {
+    browseButton.addEventListener('click', () => {
         fileInput.click();
     });
 

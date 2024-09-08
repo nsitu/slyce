@@ -95,7 +95,7 @@ async function analyzeVideoFile(file) {
     }
 }
 
-const dropArea = document.querySelector('#drop-area');
+const dropArea = document.body;
 
 // Prevent default drag behaviors
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {

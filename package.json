@@ -5,10 +5,16 @@
     },
     "dependencies": {
         "canvas-size": "^2.0.0",
-        "mp4-muxer": "^4.3.3",
-        "vite": "^5.2.10",
+        "material-symbols": "^0.23.0",
+        "mp4-muxer": "^5.1.1",
+        "vite": "^5.4.3",
         "vite-plugin-static-copy": "^1.0.6",
-        "web-demuxer": "^1.0.4",
-        "webm-muxer": "^4.0.1"
+        "web-demuxer": "^2.1.0",
+        "webm-muxer": "^5.0.1"
+    },
+    "devDependencies": {
+        "autoprefixer": "^10.4.20",
+        "postcss": "^8.4.45",
+        "tailwindcss": "^3.4.10"
     }
 }
