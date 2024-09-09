@@ -48,8 +48,9 @@ const decoder = new VideoDecoder({
         Decoding frame: ${frameNumber} of ${frameCount}<br/>`
         setStatus(message)
 
-        frameNumber++;
         canvasManager.drawFrame(videoFrame, frameNumber);
+
+        frameNumber++;
 
         videoFrame.close();
         if (resumeDecode) {
