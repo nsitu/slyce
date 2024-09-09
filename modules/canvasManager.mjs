@@ -1,5 +1,5 @@
 
-import { setStatus } from './statusBox.mjs'
+import { logMessage } from './activityLog.mjs'
 import canvasSize from 'canvas-size'
 
 
@@ -24,7 +24,7 @@ export class CanvasManager {
 
         // we receive information about the video
         const { videoWidth, videoHeight, frameCount } = options
-        setStatus('Checking canvas size limits...')
+        logMessage('Checking canvas size limits...')
         const { height: maxCanvasHeight } = await canvasSize.maxArea()
         console.log(`Max canvas height: ${maxCanvasHeight}`)
 

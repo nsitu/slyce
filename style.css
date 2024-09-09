@@ -45,3 +45,21 @@ canvas {
     padding-left: 0rem;
     padding: 0 0.5rem;
 }
+
+
+#status-box {
+    display: none;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+}
+
+
+#activity-log {
+    display: none;
+    max-height: 10rem;
+    overflow-y: scroll;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+}

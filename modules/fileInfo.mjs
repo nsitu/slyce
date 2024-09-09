@@ -3,16 +3,25 @@ const fileInfo = document.getElementById('file-info')
 
 
 const niceDuration = (duration) => {
-    // TODO: add hours
-    const minutes = Math.floor(duration / 60)
-    const seconds = Math.floor(duration % 60)
-    if (seconds < 10) {
-        return `${minutes}:0${seconds}`
-    }
-    else {
-        return `${minutes}:${seconds}`
+    const hours = Math.floor(duration / 3600)
+    const minutes = Math.floor((duration % 3600) / 60).toString().padStart(2, '0')
+    const seconds = Math.floor(duration % 60).toString().padStart(2, '0')
+    const milliseconds = Math.floor((duration % 1) * 1000).toString().padStart(3, '0')
+
+
+    let result = `${minutes}:${seconds}.${milliseconds}`
+
+    if (hours > 0) {
+        result = `${hours}:${result}`
     }
 
+    return result
+}
+
+const niceBitRate = (bitRate) => {
+    const kb = bitRate / 1000
+    const mb = kb / 1000
+    return `${mb.toFixed(2)} Mbps`
 }
 
 const niceFrameRate = (frameRate) => {
@@ -27,13 +36,16 @@ avc1		AVC           Advanced Video Coding / H.264
 av01		AV            Alliance for Open Media / AOMedia Video 1 */
 const niceCodec = (codec) => {
     if (codec.startsWith('avc')) {
-        return 'H.264 / AVC (Advanced Video Coding)'
+        //(Advanced Video Coding)
+        return 'H.264 / AVC'
     }
     else if (codec.startsWith('av01')) {
-        return 'AV1 / AOMedia Video 1 (Alliance for Open Media)'
+        // (Alliance for Open Media)
+        return 'AV1 / AOMedia Video 1'
     }
     else if (codec.startsWith('hvc1') || codec.startsWith('hev1')) {
-        return 'H.265 / HEVC (High Efficiency Video Coding)'
+        // (High Efficiency Video Coding)
+        return 'H.265 / HEVC'
     }
     else if (codec.startsWith('vp8')) {
         return 'VP8 / WebM / Google'
@@ -68,12 +80,7 @@ video_file
 </span></td>
             <td class="file-info-value">${data.name}</td>
         </tr> 
-         <tr>
-            <td class="file-info-label">Resolution <span class="material-symbols-outlined">
-view_compact
-</span></td>
-            <td class="file-info-value">${data.width} x ${data.height} pixels (w x h)</td>
-        </tr> 
+         
         <tr>
             <td class="file-info-label">Codec <span class="material-symbols-outlined">
 frame_source
@@ -109,11 +116,25 @@ calculate
         </tr>
        
       
-        <tr>
+       
+        </table>
+        <table><tr>
+            <td class="file-info-label">Resolution <span class="material-symbols-outlined">
+view_compact
+</span></td>
+            <td class="file-info-value">${data.width} x ${data.height} pixels (w x h)</td>
+        </tr> 
+         <tr>
             <td class="file-info-label">Rotation <span class="material-symbols-outlined">
 rotate_right
 </span></td>
             <td class="file-info-value">${data.rotation} degrees</td>
+        </tr>
+         <tr>
+            <td class="file-info-label">Bit Rate <span class="material-symbols-outlined">
+equalizer
+</span></td>
+            <td class="file-info-value">${niceBitRate(data.bit_rate)}</td>
         </tr>
         </table>
         </div>

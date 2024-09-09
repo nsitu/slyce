@@ -22,6 +22,7 @@
 
 <body>
 
+    <!-- Header -->
     <div class="flex gap-5 items-center justify-center p-4">
         <h1 class="text-3xl whitespace-nowrap">Web Codecs Test</h1>
         <p class="text-sm">This demo animates artistic
@@ -53,8 +54,9 @@
             space dimensions. The strategic bit allows for a loopable back-and-forth sway.
         </p>
     </div>
-    <div class="flex gap-4 items-center justify-center w-auto border-2 border-gray-300 rounded-md p-4">
 
+    <!-- Upload Video -->
+    <div class="flex gap-4 items-center justify-center w-auto border-2 border-gray-300 rounded-md p-4">
         <h3 class="flex items-center gap-2 text-xl"><img
                 src="video-upload.svg"
                 alt="Upload Video"
@@ -72,6 +74,13 @@
             accept="video/*"
         >
         <div id="file-info">
+        </div>
+    </div>
+
+    <div class="flex gap-4">
+        <div id="activity-log">
+        </div>
+        <div id="status-box">
         </div>
     </div>
 

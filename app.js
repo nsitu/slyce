@@ -3,6 +3,7 @@ import { WebDemuxer } from "web-demuxer"
 import { fileHandler } from './modules/fileHandler.mjs'
 import { CanvasManager } from './modules/canvasManager.mjs';
 import { setStatus } from './modules/statusBox.mjs'
+import { logMessage } from './modules/activityLog.mjs'
 import { showFileInfo } from './modules/fileInfo.mjs'
 import { fps } from './modules/fps.mjs'
 import { Muxer, ArrayBufferTarget } from 'webm-muxer';
@@ -41,8 +42,15 @@ const canvasManager = new CanvasManager();  // Create a new instance of CanvasMa
 // Setup VideoDecoder
 const decoder = new VideoDecoder({
     output: (videoFrame) => {
-        canvasManager.drawFrame(videoFrame, frameNumber);
+        // could we update the statusBox here?  
+        let message = `FPS: ${fps()} </br>
+        Queue size: ${decoder.decodeQueueSize}.<br/>
+        Decoding frame: ${frameNumber} of ${frameCount}<br/>`
+        setStatus(message)
+
         frameNumber++;
+        canvasManager.drawFrame(videoFrame, frameNumber);
+
         videoFrame.close();
         if (resumeDecode) {
             // Resolve the pauseDecode promise, allowing the next frame to be decoded
@@ -70,9 +78,9 @@ async function processFile(file) {
     currentFile = file.name
     try {
 
-        setStatus(`Loading Demuxer`)
+        logMessage(`Loading Demuxer`)
         await demuxer.load(file);
-        setStatus(`Loading Stream Info`)
+        logMessage(`Loading Stream Info`)
         let info = await demuxer.getAVStream();
         frameCount = Number(info.nb_frames)
 
@@ -82,15 +90,15 @@ async function processFile(file) {
         })
 
         console.log('getAVStream', info)
-        setStatus(`Loading Video Decoder Config`)
+        logMessage(`Loading Video Decoder Config`)
         config = await demuxer.getVideoDecoderConfig();
         console.log(config)
         if (VideoDecoder.isConfigSupported(config)) {
-            setStatus(`Codec ${config.codec} is Supported`)
+            logMessage(`Codec ${config.codec} is Supported`)
             console.log(`Codec ${config.codec} is supported`);
         }
         else {
-            setStatus(`Codec ${config.codec} is Not Supported`)
+            logMessage(`Codec ${config.codec} is Not Supported`)
             console.error(`Codec ${config.codec} is not supported`);
         }
 
@@ -133,11 +141,24 @@ async function decodePackets(reader) {
             Queue size: ${decoder.decodeQueueSize}.<br/>
             Decoding frame: ${frameNumber} of ${frameCount}<br/>`
 
+
+        setStatus(message)
+
+        // we are not actually done yet. 
+        // there might still be frames in the decoder's queue
+        // that are still processing. 
         if (done) {
-            setStatus(`${frameCount} frames decoded. Done.`)
-            // encode and mux a new video using 
-            // all the canvasses as frames 
-            encodeVideo()
+            console.log('Reader done, queue size:', decoder.decodeQueueSize);
+
+            if (decoder.decodeQueueSize > 0) {
+                // If there are still frames in the queue, wait and check again
+                await new Promise(requestAnimationFrame);
+                decodePackets(reader)
+                return;
+            }
+
+            logMessage(`${frameCount} frames decoded. Done.`);
+            encodeVideo();
             return;
         }
 
@@ -194,7 +215,7 @@ const encodeVideo = async () => {
     let videoEncoder = new VideoEncoder({
         output: (chunk, meta) => {
             framesCompleted++
-            setStatus(`Encoded frame ${framesCompleted} of ${canvasManager.canvasCount}`)
+            logMessage(`Encoded frame ${framesCompleted} of ${canvasManager.canvasCount}`)
             muxer.addVideoChunk(chunk, meta)
         },
         error: e => console.error(e)
@@ -233,11 +254,11 @@ const encodeVideo = async () => {
     muxer.finalize();
 
 
-    setStatus(`Downloading video...`)
+    logMessage(`Downloading video...`)
 
     let buffer = muxer.target.buffer;
     downloadBlob(new Blob([buffer], { type: 'video/webm' }));
-    setStatus(`Done.`)
+    logMessage(`Done.`)
 
 }
 
