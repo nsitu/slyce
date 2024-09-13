@@ -1,4 +1,3 @@
-
 import { WebDemuxer } from "web-demuxer"
 import { fileHandler } from './modules/fileHandler.mjs'
 import { CanvasManager } from './modules/canvasManager.mjs';
@@ -24,6 +23,7 @@ import 'material-symbols';
 let config = {}
 let frameCount = 0
 let frameNumber = 0
+let readerIsFinished = false
 let currentFile = ''
 
 // Pause/resume decoder with promises
@@ -42,17 +42,32 @@ const canvasManager = new CanvasManager();  // Create a new instance of CanvasMa
 // Setup VideoDecoder
 const decoder = new VideoDecoder({
     output: (videoFrame) => {
-        // could we update the statusBox here?  
-        let message = `FPS: ${fps()} </br>
-        Queue size: ${decoder.decodeQueueSize}.<br/>
-        Decoding frame: ${frameNumber} of ${frameCount}<br/>`
-        setStatus(message)
+
+
 
         canvasManager.drawFrame(videoFrame, frameNumber);
-
+        // the canvasManager will close the videoFrame
         frameNumber++;
 
-        videoFrame.close();
+        let heapStatus = '';
+
+        if (performance.memory) {
+            const { usedJSHeapSize, totalJSHeapSize, jsHeapSizeLimit } = performance.memory;
+            heapStatus = `Used: ${(usedJSHeapSize / 1024 / 1024).toFixed(2)} MB <BR/>
+                Total: ${(totalJSHeapSize / 1024 / 1024).toFixed(2)} MB <BR/>
+                Limit: ${(jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`
+        }
+
+
+        setStatus(`
+            Stream: ${readerIsFinished ? 'finished' : 'reading'}</br>
+        FPS: ${fps()} </br>
+        Queue size: ${decoder.decodeQueueSize}.<br/>
+        Decoded frame: ${frameNumber} of ${frameCount}<br/> ${heapStatus}
+        `)
+
+
+
         if (resumeDecode) {
             // Resolve the pauseDecode promise, allowing the next frame to be decoded
             resumeDecode();
@@ -72,6 +87,7 @@ async function processFile(file) {
     // reset counter for a new file
     frameCount = 0
     frameNumber = 0
+    readerIsFinished = false
     if (currentFile != '' && currentFile != file.name) {
         // if a new file is loaded, reset the canvas manager
         canvasManager.clearAll()
@@ -84,12 +100,8 @@ async function processFile(file) {
         logMessage(`Loading Stream Info`)
         let info = await demuxer.getAVStream();
         frameCount = Number(info.nb_frames)
-
-        showFileInfo({
-            ...info,
-            name: file.name
-        })
-
+        logMessage('Displaying File Metadata')
+        showFileInfo({ ...info, name: file.name })
         console.log('getAVStream', info)
         logMessage(`Loading Video Decoder Config`)
         config = await demuxer.getVideoDecoderConfig();
@@ -102,7 +114,6 @@ async function processFile(file) {
             logMessage(`Codec ${config.codec} is Not Supported`)
             console.error(`Codec ${config.codec} is not supported`);
         }
-
         // pass along details about the video to the canvas manager
         await canvasManager.configure({
             videoWidth: config.codedWidth,
@@ -116,17 +127,24 @@ async function processFile(file) {
             width: config.codedWidth,
             height: config.codedHeight,
             description: config.description,
-            // hardwareAcceleration: 'prefer-hardware',
-            // latencyMode: 'realtime'  // 'realtime', 'quality' etc.
+            hardwareAcceleration: 'prefer-hardware', // default is 'prefer-hardware'
+            latencyMode: 'quality'  // default is 'quality', see also: realtime.
         });
 
         // Read and decode video packets
         const stream = demuxer.readAVPacket(0, 0, 0, -1)
-        // ReadableStreamDefaultReader
-        const reader = stream.getReader();
-        console.log('reader', reader)
+        const reader = stream.getReader()
+        // pass along ReadableStreamDefaultReader for decoding
+        await decodePackets(reader);
 
-        decodePackets(reader);
+        logMessage(`Decoded ${frameNumber} of ${frameCount} frames.`);
+
+        if (frameNumber !== frameCount) {
+            logMessage(`Framecount mismatch.`)
+        }
+        encodeVideo();
+
+
     } catch (error) {
         console.error('Failed to process file:', error);
     }
@@ -134,65 +152,26 @@ async function processFile(file) {
 
 async function decodePackets(reader) {
     try {
-        // get  the next chunk in the stream's internal queue.
         const { done, value } = await reader.read();
-        // console.log(value)
 
-        let message = `FPS: ${fps()} </br>
-            Queue size: ${decoder.decodeQueueSize}.<br/>
-            Decoding frame: ${frameNumber} of ${frameCount}<br/>`
-
-
-        setStatus(message)
-
-        // we are not actually done yet. 
-        // there might still be frames in the decoder's queue
-        // that are still processing. 
         if (done) {
-            console.log('Reader done, queue size:', decoder.decodeQueueSize);
-
-            if (decoder.decodeQueueSize > 0) {
-                // If there are still frames in the queue, wait and check again
-                await new Promise(requestAnimationFrame);
-                decodePackets(reader)
-                return;
-            }
-
-            logMessage(`${frameCount} frames decoded. Done.`);
-            encodeVideo();
+            await decoder.flush();
+            logMessage('Decoder flushed, all frames processed.');
             return;
         }
-
-        //  https://developer.mozilla.org/en-US/docs/Web/API/EncodedVideoChunk
-        const chunkOptions = {
+        //if (decoder.decodeQueueSize > 400) { await pauseDecode; }
+        // Decode the video chunk
+        decoder.decode(new EncodedVideoChunk({
             type: value.keyframe ? 'key' : 'delta',
             timestamp: value.timestamp,
             duration: value.duration,
             data: value.data,
             transfer: [value.data.buffer]
-        }
-        const chunk = new EncodedVideoChunk(chunkOptions);
+        }));
 
-        // Managing the Queue.
-        // Sometimes decoding involves inter-frame dependencies
-        // and looking ahead in the stream to decode a frame
-        // (e.g., a B-frame may depend on a future I-frame).
-        // On the other hand, let's not overload the decoder with a large queue.
-        // A safe balance: pause the queue after 20 frames 
-        // to let the decoder 'catch up'.
-        // TODO: Define and manage edge cases 
-        // where we need to look ahead more than 20 frames.
-        // TODO: Define memory implications of lookAhead == 300 frames.
-        const lookAhead = 30
-        if (decoder.decodeQueueSize > lookAhead) {
-            await pauseDecode
-        }
-        decoder.decode(chunk)
-        setStatus(message)
-        // Introduce a slight delay to allow garbage collection
-        // This would cap the speed to ~60fps.
-        // await new Promise(requestAnimationFrame);
-        decodePackets(reader)
+        // Continue decoding the next packet
+        await decodePackets(reader);
+
     } catch (readError) {
         console.error('Error while reading packets:', readError);
     }
@@ -216,7 +195,7 @@ const encodeVideo = async () => {
     let videoEncoder = new VideoEncoder({
         output: (chunk, meta) => {
             framesCompleted++
-            logMessage(`Encoded frame ${framesCompleted} of ${canvasManager.canvasCount}`)
+            setStatus(`Encoded frame ${framesCompleted} of ${sequencedFrames.length}`)
             muxer.addVideoChunk(chunk, meta)
         },
         error: e => console.error(e)
@@ -225,7 +204,7 @@ const encodeVideo = async () => {
         codec: 'vp09.00.10.08',
         width: canvasManager.canvasWidth,
         height: canvasManager.canvasHeight,
-        bitrate: 2e6  // 2,000,000 bits per second
+        bitrate: 3e6  // 3,000,000 bits per second
     });
 
 

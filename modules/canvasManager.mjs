@@ -2,6 +2,8 @@
 import { logMessage } from './activityLog.mjs'
 import canvasSize from 'canvas-size'
 
+// We use offscreen canvasses as a way to assemble cross sections of the video
+// these cross sections are then animated by the video encoder elsewhere.
 
 export class CanvasManager {
     constructor() {
@@ -26,7 +28,7 @@ export class CanvasManager {
         const { videoWidth, videoHeight, frameCount } = options
         logMessage('Checking canvas size limits...')
         const { height: maxCanvasHeight } = await canvasSize.maxArea()
-        console.log(`Max canvas height: ${maxCanvasHeight}`)
+        logMessage(`Max canvas height: ${maxCanvasHeight}`)
 
         // capture video dimensions and duration
         this.videoWidth = videoWidth;
@@ -53,6 +55,22 @@ export class CanvasManager {
         });
     }
 
+
+    // async drawFrame(videoFrame, frameNumber) {
+
+    //     await Promise.all(this.contexts.map((ctx, index) => {
+    //         return new Promise((resolve) => {
+    //             let normalizedIndex = (index / (this.canvasCount - 1)) * Math.PI;
+    //             let sampleLocation = (Math.cos(normalizedIndex) + 1) / 2 * (this.videoHeight - 1);
+
+    //             ctx.drawImage(videoFrame, 0, sampleLocation, this.videoWidth, 1, 0, frameNumber, this.canvasWidth, 1);
+    //             resolve();
+    //         });
+    //     }));
+    //     videoFrame.close();
+    // }
+
+
     // Draw a frame slice on a specific canvas
     drawFrame(videoFrame, frameNumber) {
 
@@ -76,6 +94,8 @@ export class CanvasManager {
 
             ctx.drawImage(videoFrame, 0, sampleLocation, this.videoWidth, 1, 0, frameNumber, this.canvasWidth, 1);
         });
+        // TODO: make sure all the drawImage calls are finished before closing the videoFrame
+
         videoFrame.close();
     }
 

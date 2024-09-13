@@ -49,7 +49,7 @@ canvas {
 
 #status-box {
     display: none;
-    padding: 0.5rem;
+    padding: 1rem;
     border: 1px solid #ccc;
     border-radius: 0.5rem;
 }
@@ -57,9 +57,9 @@ canvas {
 
 #activity-log {
     display: none;
-    max-height: 10rem;
+    max-height: 15rem;
     overflow-y: scroll;
-    padding: 0.5rem;
+    padding: 1rem;
     border: 1px solid #ccc;
     border-radius: 0.5rem;
 }

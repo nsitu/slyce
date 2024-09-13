@@ -56,31 +56,33 @@
     </div>
 
     <!-- Upload Video -->
-    <div class="flex gap-4 items-center justify-center w-auto border-2 border-gray-300 rounded-md p-4">
-        <h3 class="flex items-center gap-2 text-xl"><img
-                src="video-upload.svg"
-                alt="Upload Video"
-            ><span>Upload Video</span></h3>
-        <span>Drag/Drop anywhere</span>
-        <span>or</span>
-        <button
-            class="bg-blue-500 text-white px-4 py-2 rounded-md"
-            id="browse-button"
-        >Browse...</button>
-        <input
-            type="file"
-            id="file-input"
-            style="display: none;"
-            accept="video/*"
-        >
-        <div id="file-info">
+    <div class="flex flex-col gap-4 items-stretch">
+        <div class="flex gap-4 items-center justify-center w-auto border-2 border-gray-300 rounded-md p-4">
+            <h3 class="flex items-center gap-2 text-xl"><img
+                    src="video-upload.svg"
+                    alt="Upload Video"
+                ><span>Upload Video</span></h3>
+            <span>Drag/Drop anywhere</span>
+            <span>or</span>
+            <button
+                class="bg-blue-500 text-white px-4 py-2 rounded-md"
+                id="browse-button"
+            >Browse...</button>
+            <input
+                type="file"
+                id="file-input"
+                style="display: none;"
+                accept="video/*"
+            >
+            <div id="file-info">
+            </div>
         </div>
-    </div>
 
-    <div class="flex gap-4">
-        <div id="activity-log">
-        </div>
-        <div id="status-box">
+        <div class="flex gap-4">
+            <div id="activity-log">
+            </div>
+            <div id="status-box">
+            </div>
         </div>
     </div>
 
