@@ -1,3 +1,5 @@
+// NOTE: this worker is currently not being used.  
+// you may like to revist the use of workers in the app. 
 let canvas, ctx;
 
 self.onmessage = function (event) {

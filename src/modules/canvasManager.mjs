@@ -1,12 +1,14 @@
+import { useAppStore } from '../stores/appStore';
 
-import { logMessage } from './activityLog.mjs'
 import canvasSize from 'canvas-size'
 
 // We use offscreen canvasses as a way to assemble cross sections of the video
 // these cross sections are then animated by the video encoder elsewhere.
 
-export class CanvasManager {
+export default class CanvasManager {
+
     constructor() {
+
         this.canvasCount = 60; // Number of canvasses to create
         this.canvasses = [];
         this.contexts = [];
@@ -22,18 +24,25 @@ export class CanvasManager {
 
     async configure(options) {
 
+
+        const app = useAppStore()  // Pinia store
+
         console.log(options)
 
         // we receive information about the video
-        const { videoWidth, videoHeight, frameCount } = options
-        logMessage('Checking canvas size limits...')
+        const { videoWidth, videoHeight, frameCount, useShortSide } = options
+        app.log('Checking canvas size limits...')
         const { height: maxCanvasHeight } = await canvasSize.maxArea()
-        logMessage(`Max canvas height: ${maxCanvasHeight}`)
+        app.log(`Max canvas height: ${maxCanvasHeight}`)
 
         // capture video dimensions and duration
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
         this.frameCount = frameCount;
+        this.useShortSide = useShortSide;
+        //THIS IS WHERE WE LEFT OFF
+
+
 
         // define canvas dimensions
         this.canvasWidth = videoWidth;
@@ -73,6 +82,9 @@ export class CanvasManager {
 
     // Draw a frame slice on a specific canvas
     drawFrame(videoFrame, frameNumber) {
+
+
+        const app = useAppStore()  // Pinia store
 
         this.contexts.forEach((ctx, index) => {
 
