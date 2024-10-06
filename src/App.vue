@@ -7,12 +7,13 @@
 
     import { dragAndDrop } from './modules/dragAndDropHandler';
     import { processVideo } from './modules/videoProcessor';
+    import CanvasManager from './modules/canvasManager';
+
     import Header from './components/Header.vue'
     import UploadArea from './components/UploadArea.vue';
     import ActivityLog from './components/ActivityLog.vue';
     import StatusBox from './components/StatusBox.vue';
     import SettingsArea from './components/SettingsArea.vue';
-    import CanvasManager from './modules/CanvasManager';
     import FileInfo from './components/FileInfo.vue';
     import VideoPlayer from './components/VideoPlayer.vue';
 
