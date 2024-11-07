@@ -58,10 +58,13 @@ const encodeVideo = async () => {
     await videoEncoder.flush();
     muxer.finalize();
 
+
     app.log(`Creating Blob...`)
     let blob = new Blob([muxer.target.buffer])
     app.set('blob', blob)
     app.set('blobURL', URL.createObjectURL(blob))
+
+    app.set('currentTab', '3')
 
 
 }

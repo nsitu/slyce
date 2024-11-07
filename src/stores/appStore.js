@@ -6,19 +6,29 @@ export const useAppStore = defineStore('appStore', {
         frameCount: 0,
         frameNumber: 0,
         useShortSide: true,
+        crossSectionCount: 60,
+        crossSectionType: 'planar',
         samplingMode: 'rows',
+        distributionMode: 'cosine',
+        outputMode: 'rows',
+        tileMode: 'tile',
+        tileProportion: 'square',
+        prioritize: 'duration',
+        outputVideoType: 'looping',
         readerIsFinished: false,
-        currentFile: '',
         fileInfo: null,
         messages: [],
         status: '',
         pauseDecode: null,
         resumeDecode: null,
         blob: null,
+        // blobURL is set elsewhere but it has a lifecycle.
+        // TODO: study whether/when to use revokeObjectURL()
         blobURL: null,
         fpsNow: 0,
         lastFPSUpdate: 0,
-        timestamps: []
+        timestamps: [],
+        currentTab: '0'
     }),
     actions: {
         set(key, value) {

@@ -1,26 +1,31 @@
 <script setup>
 
-    import { useAppStore } from '../stores/appStore';
+    // This component embeds a preview of the uploaded video file
+    // it also displays metadata about the video 
+    // It assumes that the relevant data has been added to the store
+    // app.fileURL  a blob URL for the uploaded video file
+    // app.fileInfo  an object with metadata about the video file
 
-    // you would think that importing material-symbols matters, given that we are using those symbols in the template
-    // but it seems not to matter at all ???
+    import { useAppStore } from '../stores/appStore';
+    const app = useAppStore()  // Pinia store  
 
     import { useNiceFormat } from '../composables/useNiceFormat';
-    import { onMounted } from 'vue';
     const { niceCodec, niceDuration, niceFrameRate, niceBitRate } = useNiceFormat();
 
-    const app = useAppStore()  // Pinia store 
+    import VideoPlayer from './VideoPlayer.vue';
 
-    onMounted(() => {
-        console.log('FileInfo component mounted');
-    });
 </script>
 
 <template>
     <div
-        class="flex items-start gap-2"
-        v-if="app && app.fileInfo"
+        class="flex flex-col items-start gap-2"
+        v-if="app?.fileInfo?.name"
     >
+        <VideoPlayer
+            class="smallPlayer"
+            v-if="app.fileURL"
+            :url="app.fileURL"
+        ></VideoPlayer>
         <table>
             <tbody>
                 <tr>
@@ -42,10 +47,6 @@
                         </span></td>
                     <td class="file-info-value">{{ app.fileInfo?.codec_string }}</td>
                 </tr>
-            </tbody>
-        </table>
-        <table>
-            <tbody>
                 <tr>
                     <td class="file-info-label">Duration <span class="material-symbols-outlined">
                             timer
@@ -64,12 +65,6 @@
                         </span></td>
                     <td class="file-info-value">{{ app.fileInfo?.nb_frames }}</td>
                 </tr>
-            </tbody>
-
-
-        </table>
-        <table>
-            <tbody>
                 <tr>
                     <td class="file-info-label">Resolution <span class="material-symbols-outlined">
                             view_compact
@@ -92,9 +87,15 @@
             </tbody>
         </table>
     </div>
+    <div v-else>
+        Loading...
+    </div>
 </template>
 <style scoped>
 
+    .smallPlayer {
+        max-width: 20vw;
+    }
 
     #file-info table {
         background-color: #eee;

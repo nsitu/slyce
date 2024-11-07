@@ -24,7 +24,6 @@ export default class CanvasManager {
 
     async configure(options) {
 
-
         const app = useAppStore()  // Pinia store
 
         console.log(options)

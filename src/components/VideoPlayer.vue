@@ -1,7 +1,10 @@
 <script setup>
 
-    import { useAppStore } from '../stores/appStore';
-    const app = useAppStore()  // Pinia store
+
+    defineProps({
+        url: String,
+        default: null
+    })
 
 </script>
 
@@ -9,8 +12,8 @@
 <template>
     <video
         ref="videoElement"
-        v-if="app.blobURL"
-        :src="app.blobURL"
+        v-if="url"
+        :src="url"
         controls
         loop
         autoplay

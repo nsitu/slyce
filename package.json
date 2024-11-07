@@ -4,11 +4,15 @@
         "build": "vite build"
     },
     "dependencies": {
+        "@primevue/themes": "^4.0.7",
         "@vitejs/plugin-vue": "^5.1.4",
+        "@vueuse/core": "^11.1.0",
         "canvas-size": "^2.0.0",
         "material-symbols": "^0.24.0",
         "mp4-muxer": "^5.1.3",
         "pinia": "^2.2.4",
+        "primevue": "^4.0.7",
+        "three": "^0.169.0",
         "vite": "^5.4.8",
         "vite-plugin-static-copy": "^1.0.6",
         "vue": "^3.5.11",

@@ -4,6 +4,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 import vueDevTools from 'vite-plugin-vue-devtools'
 import vue from '@vitejs/plugin-vue';
 
+
 export default defineConfig({
     plugins: [
         vue(),
