@@ -7,16 +7,15 @@ export const useAppStore = defineStore('appStore', {
         frameNumber: 0,
         useShortSide: true,
         crossSectionCount: 60,
-        crossSectionType: 'planar',
-        samplingMode: 'rows',
-        distributionMode: 'cosine',
-        outputMode: 'rows',
-        tileMode: 'tile',
-        tileProportion: 'square',
-        prioritize: 'duration',
-        outputVideoType: 'looping',
+        crossSectionType: 'plane', // plane, wave
+        samplingMode: 'rows',       // rows, columns
+        outputMode: 'rows',         // rows, columns
+        tileMode: 'tile',           // tile, full
+        tileProportion: 'square',       // square, landscape, portrait
+        prioritize: 'quantity',         // quantity, quality
         readerIsFinished: false,
         fileInfo: null,
+        samplePixelCount: 0, /** equals width or height depending on samplingMode */
         messages: [],
         status: '',
         pauseDecode: null,

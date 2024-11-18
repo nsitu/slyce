@@ -49,7 +49,7 @@ export function useNiceFormat() {
         else if (codec?.startsWith('vp8')) {
             return 'VP8 / WebM / Google'
         }
-        else if (codec?.startsWith('vp9')) {
+        else if (codec?.startsWith('vp9') || codec?.startsWith('vp09')) {
             return 'VP9 / WebM / Google'
         }
         else {

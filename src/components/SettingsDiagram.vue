@@ -90,14 +90,14 @@
                 scene.add(corrugatedSurface);
             }
         }
-        else if (app.crossSectionType == 'planar') {
+        else if (app.crossSectionType == 'plane') {
             // TODO include the top plane
             // TODO account for wave distribution  option
             for (let i = 0; i < representativeCount; i++) {
-                let planarSurface = createPlanarSurface({
+                let planeSurface = createPlanarSurface({
                     x, y, z, offset: (1 / representativeCount) * i
                 })
-                scene.add(planarSurface);
+                scene.add(planeSurface);
             }
         }
 

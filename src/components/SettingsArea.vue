@@ -1,42 +1,26 @@
 <script setup>
 
-    import { watch, ref, computed } from 'vue';
+    import { watch, watchEffect, ref, onMounted, computed } from 'vue';
     import { useAppStore } from '../stores/appStore';
     const app = useAppStore()  // Pinia store
 
+    import { useTilePlan } from '../composables/useTilePlan';
+    const { tilePlan } = useTilePlan();
 
     import { getMetaData } from '../modules/metaDataExtractor';
     import { processVideo } from '../modules/videoProcessor';
+
+    import Tile from './Tile.vue';
+    // import SkipMessage from './SkipMessage.vue';
+    // import ScaleMessage from './ScaleMessage.vue'; 
+    import ExplanatoryMessages from './ExplanatoryMessages.vue';
+
 
     // when a file is uploaded get the metadata
     watch(() => app.file, () => getMetaData())
 
 
 
-    const tileCount = computed(() => {
-
-        if (app.fileInfo?.width && app.fileInfo?.height && app.frameCount) {
-            if (app.prioritize == 'resolution') {
-                if (app.samplingMode == 'rows') {
-                    return Math.floor(app.frameCount / app.fileInfo.width)
-                }
-                else if (app.samplingMode == 'columns') {
-                    return Math.floor(app.frameCount / app.fileInfo.height)
-                }
-            }
-            else if (app.prioritize == 'duration') {
-                if (app.samplingMode == 'rows') {
-                    return Math.floor(app.frameCount / app.fileInfo.width) + 1
-                    // return Math.floor(app.frameCount / ())
-                }
-                else if (app.samplingMode == 'columns') {
-                    return Math.floor(app.frameCount / app.fileInfo.height) + 1
-                    // return Math.floor(app.frameCount / ())
-                }
-            }
-
-        }
-    })
     import FileInfo from './FileInfo.vue';
 
 
@@ -46,26 +30,30 @@
 
     import SettingsDiagram from './SettingsDiagram.vue';
 
-    // Watch for changes in crossSectionType and adjust distributionMode accordingly
-    watch(() => app.crossSectionType, (newType) => {
-        if (newType === 'planar' && app.distributionMode !== 'cosine') {
-            app.distributionMode = 'cosine';
-        } else if (newType === 'corrugated' && app.distributionMode !== 'linear') {
-            app.distributionMode = 'linear';
+
+
+
+
+    // Watch for changes in samplingMode and adjust samplePixelCount accordingly
+    watchEffect(() => {
+        if (app.fileInfo?.height && app.fileInfo?.width) {
+            if (app.samplingMode == 'columns') {
+                app.samplePixelCount = app.fileInfo?.height
+            }
+            if (app.samplingMode == 'rows') {
+                app.samplePixelCount = app.fileInfo?.width
+            }
         }
     });
 
-    // Watch for changes in distributionMode and adjust crossSectionType accordingly
-    watch(() => app.distributionMode, (newMode) => {
-        if (newMode === 'cosine' && app.crossSectionType !== 'planar') {
-            app.crossSectionType = 'planar';
-        } else if (newMode === 'linear' && app.crossSectionType !== 'corrugated') {
-            app.crossSectionType = 'corrugated';
-        }
-    });
 
 
     import RadioButton from 'primevue/radiobutton';
+
+
+
+
+
 
 </script>
 <template>
@@ -77,25 +65,26 @@
             id="settings"
             class="flex flex-col gap-3 items-start"
         >
-            <h3 class="text-xl">Cross Section</h3>
-            <p>What kind of cross section do you want to create?</p>
+            <h3 class="text-xl">Cross Sections</h3>
+            <p>Choose a sampling strategy:</p>
 
 
             <div class="flex w-full gap-6">
                 <label
+                    style="max-width: 15rem;"
                     class="flex flex-col grow items-start gap-2"
-                    for="planar"
-                    :class="(app.crossSectionType === 'planar') ? 'activeLabel' : ''"
+                    for="plane"
+                    :class="(app.crossSectionType === 'plane') ? 'activeLabel' : ''"
                 >
 
                     <div class="flex items-center gap-2 w-full">
                         <RadioButton
                             v-model="app.crossSectionType"
-                            inputId="planar"
+                            inputId="plane"
                             name="crossSectionType"
-                            value="planar"
+                            value="plane"
                         />
-                        <span>Planar</span>
+                        <span>Planes</span>
                         <svg
                             class="ml-auto"
                             xmlns="http://www.w3.org/2000/svg"
@@ -150,6 +139,7 @@
                 </label>
                 <label
                     class="flex flex-col grow items-start gap-2"
+                    style="max-width: 15rem;"
                     for="corrugated"
                     :class="(app.crossSectionType === 'corrugated') ? 'activeLabel' : ''"
                 >
@@ -161,7 +151,7 @@
                             value="corrugated"
                         />
 
-                        <span>Corrugated</span>
+                        <span>Waves</span>
                         <svg
                             viewBox="0 0 100 30"
                             class="ml-auto"
@@ -174,7 +164,7 @@
                             <path d="M0,15C8,7.5,15.9,0,25,0s17.1,7.5,25,15c8,7.5,15.9,15,25,15s17.1-7.5,25-15" />
                         </svg>
                     </div>
-                    <small>Sample pixels via a linear distribution of waveforms</small>
+                    <small>Sample pixels via evenly distributed corrugated forms</small>
                 </label>
             </div>
 
@@ -182,7 +172,7 @@
 
             <div class="flex gap-2 justify-start items-center">
 
-                <span>Sample</span>
+                <span>From each frame, sample</span>
                 <InputNumber
                     v-model="app.crossSectionCount"
                     placeholder="60"
@@ -192,9 +182,20 @@
                 </InputNumber>
                 <Select
                     v-model="app.samplingMode"
-                    :options="['rows', 'columns']"
+                    :options="['columns', 'rows']"
                 />
-                <span>of pixels from each frame. </span>
+
+                <span>of</span>
+                <span
+                    v-if="app.fileInfo?.width && app.samplingMode == 'rows'"
+                    class="sample-pixel-count"
+                >
+                    {{ app.fileInfo.width }} pixels</span>
+                <span
+                    v-if="app.fileInfo?.height && app.samplingMode == 'columns'"
+                    class="sample-pixel-count"
+                >
+                    {{ app.fileInfo.height }} pixels</span>
 
             </div>
 
@@ -206,9 +207,9 @@
 
                 <Select
                     v-model="app.outputMode"
-                    :options="['rows', 'columns']"
+                    :options="['columns', 'rows']"
                 />
-                <span>to form a</span>
+                <span>to form</span>
                 <Select
                     v-model="app.tileMode"
                     :options="[{
@@ -221,7 +222,7 @@
                     optionValue="value"
                     optionLabel="name"
                 />
-                <span>cross-section.</span>
+                <span>cross-sections.</span>
             </div>
             <div
                 v-if="app.tileMode === 'tile'"
@@ -235,60 +236,57 @@
                         name: 'square (1:1)',
                         value: 'square'
                     }, {
-                        name: 'rectangular (16:9)',
-                        value: 'rectangular'
+                        name: 'landscape (16:9)',
+                        value: 'landscape'
+                    }, {
+                        name: 'portrait (9:16)',
+                        value: 'portrait'
                     }]"
                     optionValue="value"
                     optionLabel="name"
                 />
                 <span>tiles optimized for</span>
+                <!-- this used to be duration and resolution
+                 buy quanity/quality makes more sense as a description of the tiles.
+                 TODO: refactor components that depend on app.prioritize -->
                 <Select
                     v-model="app.prioritize"
                     :options="[{
-                        name: 'duration',
-                        value: 'duration'
+                        name: 'quantity',
+                        value: 'quantity'
                     }, {
-                        name: 'resolution',
-                        value: 'resolution'
+                        name: 'quality',
+                        value: 'quality'
                     }]"
                     optionValue="value"
                     optionLabel="name"
                 />
             </div>
+            <ExplanatoryMessages
+                style="max-width: 31.5rem;"
+                :plan="tilePlan"
+            ></ExplanatoryMessages>
+
 
 
 
 
         </div>
 
-
-
-
         <div class="flex flex-col items-start gap-2">
-            <div v-if="tileCount">
-                <div
-                    v-for="square in Array.from({ length: tileCount })"
-                    class="tile"
-                ></div>
+            <div
+                v-if="tilePlan?.tiles?.length"
+                :class="(app.outputMode == 'columns') ? 'tile-container-columns' : 'tile-container-rows'"
+            >
+                <Tile
+                    v-for="tile in tilePlan.tiles"
+                    :start="tile.start"
+                    :end="tile.end"
+                    :width="tilePlan.width"
+                    :height="tilePlan.height"
+                ></Tile>
             </div>
 
-            <!-- In the case of a tiled cross section
-             it would be nice to show a preview of the tiles here 
-             to illustrate tiling strategies.
-             -prioritizing duration
-            
-             e.g. for video of 320x240 pixels resolution with length of 300 frames.
-             how many tiles would it take to fill 
-    
-                 https://chatgpt.com/c/672d2e04-f4cc-8012-82f1-12f7291b6c9d
-
-              -prioritizing resolution
-
-            
-            
-
-
-             -->
 
             <!-- <SettingsDiagram>
 
@@ -305,12 +303,27 @@
     </div>
 </template>
 <style scoped>
-    .tile {
-        width: 100px;
-        height: 100px;
-        background: #666;
-        border: 2px solid white;
+
+    span.sample-pixel-count {
+        font-variant: small-caps;
+        color: #10b981;
+        border: 1px solid #10b981;
+        border-radius: 0.25rem;
+        padding: 0.25rem 0.5rem;
     }
+
+    .tile-container-columns {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .tile-container-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+
 
     label {
         box-shadow: rgba(0, 30, 43, 0.3) 0px 4px 10px -4px;
