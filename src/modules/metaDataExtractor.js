@@ -1,5 +1,5 @@
 import { useAppStore } from '../stores/appStore';
-import { demuxer } from './webDemuxer.mjs';
+import { demuxer } from './webDemuxer.js';
 
 const getMetaData = async () => {
 

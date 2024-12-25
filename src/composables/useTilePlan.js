@@ -1,6 +1,12 @@
 import { computed } from 'vue';
 import { useAppStore } from '../stores/appStore';
 
+// The tilePlan is initially a computed property
+// so as to be able to reactively update the user interface with helpful preview
+// information about the tile plan.
+// afterwards (e.g. in the videoProcessor) it will be baked  into app.tilePlan 
+// so that processing can occur reliably without further mutation.
+
 export function useTilePlan() {
     const app = useAppStore(); // Pinia store
 
@@ -94,7 +100,8 @@ export function useTilePlan() {
                         // Recalculate framesPerTile
                         framesPerTile = Math.floor(app.frameCount / plan.length);
                         plan.width = framesPerTile; // Temporal side
-                        plan.height = Math.floor(plan.width * aspectRatio); // Spatial side 
+                        // plan.height = Math.floor(plan.width * aspectRatio); // Spatial side 
+                        plan.height = Math.floor(plan.width / aspectRatio); // Spatial side 
                         plan.isScaled = true;
                         plan.scaleFrom = spatialSide;
                         plan.scaleTo = plan.height;

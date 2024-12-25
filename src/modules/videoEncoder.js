@@ -1,17 +1,16 @@
 import { useAppStore } from '../stores/appStore';
-
 import { Muxer, ArrayBufferTarget } from 'webm-muxer';
 
-const encodeVideo = async () => {
+const encodeVideo = async (tileNumber) => {
 
-    const app = useAppStore()  // Pinia store
+    const app = useAppStore()  // Pinia store 
 
     let muxer = new Muxer({
         target: new ArrayBufferTarget(),
         video: {
             codec: 'V_VP9',
-            width: app.canvasManager.canvasWidth,
-            height: app.canvasManager.canvasHeight
+            width: app.tilePlan.width,
+            height: app.tilePlan.height
         },
         fastStart: 'in-memory'
     });
@@ -20,15 +19,15 @@ const encodeVideo = async () => {
     let videoEncoder = new VideoEncoder({
         output: (chunk, meta) => {
             framesCompleted++
-            app.set('status', `Encoded frame ${framesCompleted} of ${sequencedFrames.length}`)
+            app.setStatus('Encoding', `Encoded frame ${framesCompleted} of ${sequencedFrames.length} in Tile ${tileNumber}`)
             muxer.addVideoChunk(chunk, meta)
         },
         error: e => console.error(e)
     });
     videoEncoder.configure({
         codec: 'vp09.00.10.08',
-        width: app.canvasManager.canvasWidth,
-        height: app.canvasManager.canvasHeight,
+        width: app.tilePlan.width,
+        height: app.tilePlan.height,
         bitrate: 3e6  // 3,000,000 bits per second
     });
 
@@ -50,8 +49,8 @@ const encodeVideo = async () => {
     // First in natural forward order and then and again reverse
     // this results in a loopable back-and-forth effect in the final video
     const sequencedFrames = [
-        ...app.canvasManager.canvasses,
-        ...app.canvasManager.canvasses.slice().reverse()
+        ...app.canvasses[tileNumber],
+        ...app.canvasses[tileNumber].slice().reverse()
     ];
 
     sequencedFrames.forEach((canvas, frameIndex) => encodeFrame(canvas, frameIndex))
@@ -61,8 +60,11 @@ const encodeVideo = async () => {
 
     app.log(`Creating Blob...`)
     let blob = new Blob([muxer.target.buffer])
-    app.set('blob', blob)
-    app.set('blobURL', URL.createObjectURL(blob))
+
+    app.createBlob(tileNumber, {
+        blob,
+        url: URL.createObjectURL(blob)
+    })
 
     app.set('currentTab', '3')
 

@@ -21,11 +21,12 @@
         class="flex flex-col items-start gap-2"
         v-if="app?.fileInfo?.name"
     >
-        <VideoPlayer
-            class="smallPlayer"
-            v-if="app.fileURL"
-            :url="app.fileURL"
-        ></VideoPlayer>
+        <div class="smallPlayer">
+            <VideoPlayer
+                v-if="app.fileURL"
+                :url="app.fileURL"
+            ></VideoPlayer>
+        </div>
         <table>
             <tbody>
                 <tr>

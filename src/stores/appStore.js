@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+
 // This store keeps track of the global status of the application
 export const useAppStore = defineStore('appStore', {
     state: () => ({
@@ -17,17 +18,25 @@ export const useAppStore = defineStore('appStore', {
         fileInfo: null,
         samplePixelCount: 0, /** equals width or height depending on samplingMode */
         messages: [],
-        status: '',
+        status: {},
         pauseDecode: null,
         resumeDecode: null,
         blob: null,
-        // blobURL is set elsewhere but it has a lifecycle.
-        // TODO: study whether/when to use revokeObjectURL()
         blobURL: null,
         fpsNow: 0,
         lastFPSUpdate: 0,
         timestamps: [],
-        currentTab: '0'
+        currentTab: '0',
+        // Canvasses are
+        // -provided by canvasPool
+        // -populated with samples
+        // -encoded into animations
+        canvasses: {},
+        tilePlan: {},
+        blobs: {},
+        // New properties for synchronization
+        currentPlaybackTime: 0,
+        isPlaying: false,
     }),
     actions: {
         set(key, value) {
@@ -35,6 +44,18 @@ export const useAppStore = defineStore('appStore', {
         },
         log(message) {
             this.messages.push(message);
+        },
+        allocateCanvas(tileNumber, canvas) {
+            // initialize an array if needed for this particualr tileNumber
+            this.canvasses[tileNumber] = this.canvasses[tileNumber] || [];
+            this.canvasses[tileNumber].push(canvas);
+        },
+        createBlob(tileNumber, blob) {
+            // Initialize the blob for the given tileNumber
+            this.blobs[tileNumber] = blob;
+        },
+        setStatus(key, value) {
+            this.status[key] = value;
         },
         initializeDecodeControl() {
             this.pauseDecode = new Promise(resolve => {
@@ -54,11 +75,15 @@ export const useAppStore = defineStore('appStore', {
                 this.initializeDecodeControl();
             }
         },
-
+        // Playback control
+        updatePlaybackState({ currentTime, playing }) {
+            this.currentPlaybackTime = currentTime;
+            this.isPlaying = playing;
+        }
     },
     getters: {
         fps() {
-            const now = performance.now()
+            const now = performance.now();
             this.timestamps.push(now);
             if (this.timestamps.length > 150) this.timestamps.shift();
             if (now - this.lastFPSUpdate > 250) {

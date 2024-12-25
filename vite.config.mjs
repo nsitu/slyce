@@ -13,7 +13,7 @@ export default defineConfig({
             targets: [
                 {
                     src: 'node_modules/web-demuxer/dist/wasm-files/*',
-                    dest: 'public'
+                    dest: 'wasm-files'
                 }
             ]
         })

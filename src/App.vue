@@ -4,9 +4,6 @@
     const app = useAppStore()  // Pinia store
 
     import { onMounted } from 'vue';
-
-
-
     import { dragAndDrop } from './modules/dragAndDropHandler';
 
     import Header from './components/Header.vue'
@@ -59,7 +56,7 @@
                     <StatusBox></StatusBox>
                 </TabPanel>
                 <TabPanel value="3">
-                    <DownloadArea :url="app.blobURL"></DownloadArea>
+                    <DownloadArea></DownloadArea>
                 </TabPanel>
             </TabPanels>
         </Tabs>

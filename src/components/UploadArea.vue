@@ -1,17 +1,17 @@
 <script setup>
     import { ref } from 'vue';
-    import { processVideo } from '../modules/videoProcessor';
+
+    import { useAppStore } from '../stores/appStore';
+    const app = useAppStore()  // Pinia store
 
     const fileInput = ref(null);
-    const browseForFile = () => {
-        fileInput.value.click();
-    };
-
     // Add a method to handle the file selection
     const handleFileChange = () => {
         const files = fileInput.value.files;
         if (files && files.length > 0) {
-            processVideo(files[0]);  // Process the selected file
+            app.set('file', files[0])
+            app.set('fileURL', URL.createObjectURL(files[0]))
+            app.set('currentTab', '1')
         }
     };
 </script>
@@ -25,7 +25,7 @@
         <span>Drag/Drop anywhere</span>
         <span>or</span>
         <button
-            @click="browseForFile"
+            @click=" fileInput.click()"
             class="bg-blue-500 text-white px-4 py-2 rounded-md"
             id="browse-button"
         >Browse...</button>

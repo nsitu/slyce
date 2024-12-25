@@ -19,16 +19,10 @@
     // when a file is uploaded get the metadata
     watch(() => app.file, () => getMetaData())
 
-
-
     import FileInfo from './FileInfo.vue';
-
-
     import Select from 'primevue/select';
     import InputText from 'primevue/inputtext';
     import InputNumber from 'primevue/inputnumber';
-
-    import SettingsDiagram from './SettingsDiagram.vue';
 
 
 
@@ -267,10 +261,6 @@
                 :plan="tilePlan"
             ></ExplanatoryMessages>
 
-
-
-
-
         </div>
 
         <div class="flex flex-col items-start gap-2">
@@ -288,9 +278,6 @@
             </div>
 
 
-            <!-- <SettingsDiagram>
-
-            </SettingsDiagram> -->
 
             <h3 class="text-xl">Are you ready?</h3>
             <button
