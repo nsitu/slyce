@@ -17,6 +17,11 @@ const getMetaData = async () => {
         console.log('getAVStream', info)
         app.set('frameCount', Number(info.nb_frames))
         app.set('fileInfo', { ...info, name: app.file.name })
+        app.log(`Loading Video Decoder Config`)
+        let config = await demuxer.getVideoDecoderConfig();
+        console.log('getVideoDecoderConfig', config)
+        app.set('config', config)
+
 
     } catch (error) {
         console.error('Failed to get file meta data:', error);

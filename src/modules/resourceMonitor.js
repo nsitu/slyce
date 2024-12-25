@@ -2,7 +2,6 @@ import { useAppStore } from '../stores/appStore';
 import { videoDecoder } from './videoDecoder.js';
 const resourceUsageReport = async () => {
 
-
     const app = useAppStore();
 
     let memoryUsage = '';

@@ -76,10 +76,8 @@ const processVideo = async () => {
     const poolSize = Math.min(basePoolSize, maxPoolSize);
     app.set('canvasPool', createCanvasPool(poolSize, app.tilePlan.width, app.tilePlan.height));
 
-
     // go to the processing tab.
     app.set('currentTab', '2')
-
     // reset frame counter for a new file
     app.set('frameNumber', 0)
     app.set('readerIsFinished', false)
@@ -87,15 +85,11 @@ const processVideo = async () => {
 
     try {
 
-        // the file may already be loaded as a side effect of getting metadata
-        // app.log(`Loading Demuxer`)
-        // await demuxer.load(app.file);
-
-        app.log(`Loading Video Decoder Config`)
-        let config = await demuxer.getVideoDecoderConfig();
-        console.log('getVideoDecoderConfig', config)
-
-        app.set('config', config)
+        // We will assume that the video is already loaded,
+        // the following functions have already run in metaDataExtractor.js
+        // webDemuxer.load 
+        // webDemuxer.getAVStream 
+        // webDemuxer.getVideoDecoderConfig
 
         if (VideoDecoder.isConfigSupported(app.config)) {
             app.log(`Codec ${app.config.codec} is Supported`)

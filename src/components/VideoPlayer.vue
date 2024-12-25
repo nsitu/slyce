@@ -1,17 +1,3 @@
-<template>
-    <div class="video-container">
-        <video
-            ref="videoElement"
-            v-if="url"
-            :src="url"
-            controls
-            loop
-            autoplay
-        ></video>
-        <!-- <p>{{ currentTimeDisplay }} seconds</p> -->
-    </div>
-</template>
-
 <script setup>
     import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 
@@ -147,7 +133,19 @@
     };
 
 </script>
-
+<template>
+    <div class="video-container">
+        <video
+            ref="videoElement"
+            v-if="url"
+            :src="url"
+            controls
+            loop
+            autoplay
+        ></video>
+        <!-- <p>{{ currentTimeDisplay }} seconds</p> -->
+    </div>
+</template>
 <style scoped>
     video {
         max-width: 100%;
