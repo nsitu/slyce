@@ -66,7 +66,9 @@
 
 
                 setInterval(() => {
-                    currentTime.value = videoElement.value.currentTime;
+                    if (videoElement.value) {
+                        currentTime.value = videoElement.value.currentTime;
+                    }
                 }, 100);
 
             });

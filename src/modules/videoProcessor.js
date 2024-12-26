@@ -1,13 +1,18 @@
 import { useAppStore } from '../stores/appStore';
-
 import { useTilePlan } from '../composables/useTilePlan';
-
 import { demuxer } from './webDemuxer.js';
-import { videoDecoder, decodePackets } from './videoDecoder.js';
 
+import { processFrame } from './frameProcessor.js';
+import { resourceUsageReport } from './resourceMonitor.js';
+import { encodeVideo } from './videoEncoder.js';
 import { createCanvasPool } from './canvasPool.js';
 
-
+// Import the worker script using Vite's worker import syntax
+// Vite handles bundling and worker script URLs
+const VideoDecoderWorker = new Worker(
+    new URL('../workers/videoDecoderWorker.js', import.meta.url),
+    { type: 'module' }
+);
 
 /**Video Processing
 
@@ -83,51 +88,100 @@ const processVideo = async () => {
     app.set('readerIsFinished', false)
 
 
+    // Initialize worker event listeners
+    VideoDecoderWorker.onmessage = async (e) => {
+        const { type, data } = e.data;
+
+        switch (type) {
+            case 'INITIALIZED':
+                app.log('VideoDecoderWorker initialized.');
+                // Start decoding by sending the stream
+                const stream = demuxer.readAVPacket(0, 0, 0, -1);
+
+                if (!stream) {
+                    app.log('ReadableStream is not available.');
+                    VideoDecoderWorker.postMessage({ type: 'ERROR', data: 'ReadableStream is not available.' });
+                    return;
+                }
+
+                VideoDecoderWorker.postMessage({
+                    type: 'DECODE_STREAM',
+                    data: { stream }
+                }, [stream]);
+                break;
+
+            case 'VIDEO_FRAME':
+                // Receive the transferred VideoFrame 
+                const videoFrame = data; // The VideoFrame is in data
+
+                if (videoFrame instanceof VideoFrame) {
+                    app.frameNumber++;
+
+                    // Determine the tile number based on the frame number
+                    const tileNumber = app.tilePlan.tiles.findIndex(
+                        (tile) => app.frameNumber >= tile.start && app.frameNumber <= tile.end
+                    );
+
+                    if (tileNumber === -1) {
+                        app.log(`No tile found for frame number ${app.frameNumber}. Skipping.`);
+                        videoFrame.close();
+                        return;
+                    }
+
+                    // Process the frame
+                    processFrame(videoFrame, app.frameNumber, tileNumber);
+
+                    // Update resource usage
+                    // TODO: ensure that the worker reports
+                    // the Queue size 
+                    resourceUsageReport();
+
+                    // Check if this is the last frame of the tile
+                    if (app.frameNumber === app.tilePlan.tiles[tileNumber].end) {
+                        await encodeVideo(tileNumber);
+                    }
+
+                    // Release the VideoFrame
+                    videoFrame.close();
+                } else {
+                    app.log(`Received unexpected data from worker: ${videoFrame}`);
+                }
+                break;
+
+            case 'DONE':
+                app.log('Video processing completed.');
+                // Terminate the worker if no longer needed
+                VideoDecoderWorker.terminate();
+                break;
+
+            case 'ERROR':
+                app.log(`Error in VideoDecoderWorker: ${data}`);
+                console.error(`Error in VideoDecoderWorker: ${data}`);
+                // Terminate the worker on error
+                VideoDecoderWorker.terminate();
+                break;
+
+            default:
+                app.log(`Unknown message type from worker: ${type}`);
+        }
+    };
+
+    // Initialize the worker with codec information
     try {
-
-        // We will assume that the video is already loaded,
-        // the following functions have already run in metaDataExtractor.js
-        // webDemuxer.load 
-        // webDemuxer.getAVStream 
-        // webDemuxer.getVideoDecoderConfig
-
-        if (VideoDecoder.isConfigSupported(app.config)) {
-            app.log(`Codec ${app.config.codec} is Supported`)
-            console.log(`Codec ${app.config.codec} is supported`);
-
-            videoDecoder.configure({
+        VideoDecoderWorker.postMessage({
+            type: 'INIT',
+            data: {
                 codec: app.config.codec,
-                width: app.config.codedWidth,
-                height: app.config.codedHeight,
+                codedWidth: app.config.codedWidth,
+                codedHeight: app.config.codedHeight,
                 description: app.config.description,
-                hardwareAcceleration: 'prefer-hardware', // default is 'prefer-hardware'
-                latencyMode: 'quality'  // default is 'quality', see also: realtime.
-            });
-
-            // Read and decode video packets
-            const stream = demuxer.readAVPacket(0, 0, 0, -1)
-            const reader = stream.getReader()
-            // pass along ReadableStreamDefaultReader for decoding
-            await decodePackets(reader);
-
-            app.log(`Decoded ${app.frameNumber} of ${app.frameCount} frames.`);
-
-            if (app.frameNumber !== app.frameCount) {
-                // app.frameNumnber is 0  for some reason on vp8
-                // console.log('app.frameNumber, app.frameCount', app.frameNumber, app.frameCount)
-                app.log(`Framecount mismatch.`)
             }
-
-            app.log(`Done.`)
-        }
-        else {
-            app.log(`Codec ${app.config.codec} is Not Supported`)
-            console.error(`Codec ${app.config.codec} is not supported`);
-        }
-
+        });
     } catch (error) {
-        console.error('Failed to process file:', error);
+        app.log(`Failed to initialize VideoDecoderWorker: ${error.message}`);
+        console.error(`Failed to initialize VideoDecoderWorker: ${error.message}`);
     }
+
 }
 
 export { processVideo }

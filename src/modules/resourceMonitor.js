@@ -1,5 +1,4 @@
 import { useAppStore } from '../stores/appStore';
-import { videoDecoder } from './videoDecoder.js';
 const resourceUsageReport = async () => {
 
     const app = useAppStore();
@@ -17,7 +16,7 @@ const resourceUsageReport = async () => {
         Stream: ${app.readerIsFinished ? 'finished' : 'reading'}</br>
     FPS: ${app.fps} </br>
     CPU Cores: ${navigator.hardwareConcurrency} </br>
-    Queue size: ${videoDecoder.decodeQueueSize}.<br/>
+    Queue size: ${null}.<br/>
     Decoded frame: ${app.frameNumber} of ${app.frameCount}<br/> ${memoryUsage}
     `)
 }

@@ -6,6 +6,10 @@ import { encodeVideo } from './videoEncoder.js';
 const videoDecoder = new VideoDecoder({
     output: async (videoFrame) => {
 
+        // if we were to move the decode process into a worker,
+        // we would send the videoFrame back to the main thread
+        // instead of processing it here.
+
         const app = useAppStore()
         app.frameNumber++;
 
