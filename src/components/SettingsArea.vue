@@ -49,6 +49,7 @@
 
 
 
+
 </script>
 <template>
 
@@ -283,7 +284,16 @@
             <button
                 id="process-button"
                 class="bg-blue-500 text-white px-4 py-2 rounded-md"
-                @click="processVideo()"
+                @click="processVideo({
+                    file: app.file,
+                    tilePlan: tilePlan,
+                    samplingMode: app.samplingMode,
+                    outputMode: app.outputMode,
+                    config: app.config,
+                    frameCount: app.frameCount,
+                    fileInfo: app.fileInfo,
+                    crossSectionCount: app.crossSectionCount,
+                })"
             >Process</button>
         </div>
 

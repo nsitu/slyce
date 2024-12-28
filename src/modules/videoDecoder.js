@@ -1,69 +1,103 @@
-import { useAppStore } from '../stores/appStore.js';
-import { processFrame } from './frameProcessor.js';
-import { resourceUsageReport } from './resourceMonitor.js';
-import { encodeVideo } from './videoEncoder.js';
+import { useAppStore } from '../stores/appStore';
 
-const videoDecoder = new VideoDecoder({
-    output: async (videoFrame) => {
+export async function* frameGenerator(config, stream) {
 
-        // if we were to move the decode process into a worker,
-        // we would send the videoFrame back to the main thread
-        // instead of processing it here.
+    // We need a small queue to buffer frames from the worker:
+    const frameQueue = [];
+    let done = false;
 
-        const app = useAppStore()
-        app.frameNumber++;
 
-        // to start, find the tile the current frame belongs to
-        // based on the frame number, and tile range
-        let tileNumber = app.tilePlan.tiles
-            .findIndex(tile => app.frameNumber >= tile.start && app.frameNumber <= tile.end);
+    const app = useAppStore()  // Pinia store
 
-        processFrame(videoFrame, app.frameNumber, tileNumber);
+    // Import the worker script using Vite's worker import syntax
+    // Vite handles bundling and worker script URLs
+    const VideoDecoderWorker = new Worker(
+        new URL('../workers/videoDecoderWorker.js', import.meta.url),
+        { type: 'module' }
+    );
 
-        // update ram usage stats
-        resourceUsageReport();
 
-        if (app.frameNumber === app.tilePlan.tiles[tileNumber].end) {
-            // If this is the last frame in the tile, 
-            // we need to encode the canvasses into a video
-            // and release the canvasses back to the pool
-            // or else delete the canvasses and make new ones.
-            await encodeVideo(tileNumber);
+    // Initialize worker event listeners
+    VideoDecoderWorker.onmessage = async (e) => {
+        const { type, data } = e.data;
+
+        switch (type) {
+            case 'INITIALIZED':
+                app.log('VideoDecoderWorker initialized.');
+
+                if (!stream) {
+                    app.log('ReadableStream is not available.');
+                    VideoDecoderWorker.postMessage({ type: 'ERROR', data: 'ReadableStream is not available.' });
+                    return;
+                }
+
+                VideoDecoderWorker.postMessage({
+                    type: 'DECODE_STREAM',
+                    data: { stream }
+                }, [stream]);
+                break;
+
+            case 'VIDEO_FRAME':
+
+                const videoFrame = data; // The VideoFrame is in data
+
+                if (videoFrame instanceof VideoFrame) {
+
+                    frameQueue.push(videoFrame);
+
+
+                } else {
+                    app.log(`Received unexpected data from worker: ${videoFrame}`);
+                }
+                break;
+
+            case 'DONE':
+
+                done = true;
+                app.log('Video processing completed.');
+                // Terminate the worker if no longer needed
+                VideoDecoderWorker.terminate();
+                break;
+
+            case 'ERROR':
+                app.log(`Error in VideoDecoderWorker: ${data}`);
+                console.error(`Error in VideoDecoderWorker: ${data}`);
+                // Terminate the worker on error
+                VideoDecoderWorker.terminate();
+                break;
+
+            default:
+                app.log(`Unknown message type from worker: ${type}`);
         }
-        // app.resume()
-    },
-    error: e => console.error('Video decode error:', e)
-});
+    };
 
-
-const decodePackets = async (reader) => {
-    const app = useAppStore()
+    // Initialize the worker with codec information
     try {
-        const { done, value } = await reader.read();
-
-        if (done) {
-            await videoDecoder.flush();
-            app.log('Decoder flushed, all frames processed.');
-            return;
-        }
-        //if (decoder.decodeQueueSize > 400) { await pauseDecode; }
-        // Decode the video chunk
-        let chunk = new EncodedVideoChunk({
-            type: value.keyframe ? 'key' : 'delta',
-            timestamp: value.timestamp,
-            duration: value.duration,
-            data: value.data,
-            transfer: [value.data.buffer]
-        })
-        // console.log('Decoding chunk:', chunk);
-        videoDecoder.decode(chunk);
-
-        // Continue decoding the next packet
-        await decodePackets(reader);
-
-    } catch (readError) {
-        console.error('Error while reading packets:', readError);
+        VideoDecoderWorker.postMessage({
+            type: 'INIT',
+            data: {
+                codec: config.codec,
+                codedWidth: config.codedWidth,
+                codedHeight: config.codedHeight,
+                description: config.description,
+            }
+        });
+    } catch (error) {
+        app.log(`Failed to initialize VideoDecoderWorker: ${error.message}`);
+        console.error(`Failed to initialize VideoDecoderWorker: ${error.message}`);
     }
+
+    // Now yield frames as they arrive
+    while (!done || frameQueue.length > 0) {
+        // Wait if queue is empty but not done
+        if (frameQueue.length === 0) {
+            await new Promise((resolve) => setTimeout(resolve, 5));
+            continue;
+        }
+        yield frameQueue.shift();
+    }
+
 }
 
-export { videoDecoder, decodePackets }
+
+// export { decodeVideo }

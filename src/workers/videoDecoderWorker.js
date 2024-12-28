@@ -5,7 +5,6 @@ self.onmessage = async (e) => {
     const { type, data } = e.data;
 
     if (type === 'INIT') {
-        console.log('init', data)
         // Initialize the VideoDecoder with codec information
         const { codec, codedWidth, codedHeight, description } = data;
         try {
@@ -81,25 +80,3 @@ const decodePackets = async (reader) => {
     }
 }
 
-
-// Recursive function to decode packets from the stream
-// async function decodePackets(reader) {
-//     while (true) {
-//         const { done, value } = await reader.read();
-//         if (done) break;
-
-//         // value is expected to be an AVPacket
-//         const { keyframe, timestamp, duration, data: packetData } = value;
-
-//         // Create an EncodedVideoChunk
-//         const chunk = new EncodedVideoChunk({
-//             type: keyframe ? 'key' : 'delta',
-//             timestamp: timestamp,
-//             duration: duration,
-//             data: packetData,
-//         });
-
-//         // Decode the chunk
-//         self.videoDecoder.decode(chunk);
-//     }
-// }

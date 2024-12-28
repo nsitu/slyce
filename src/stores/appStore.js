@@ -23,9 +23,11 @@ export const useAppStore = defineStore('appStore', {
         resumeDecode: null,
         blob: null,
         blobURL: null,
-        fpsNow: 0,
-        lastFPSUpdate: 0,
-        timestamps: [],
+
+        fpsNow: 0,          // current FPS measurement
+        timestamps: [],     // store recent frame timestamps
+        lastFPSUpdate: 0,   // helps ensure we don't recalc FPS too often
+
         currentTab: '0',
         // Canvasses are
         // -provided by canvasPool
@@ -79,21 +81,35 @@ export const useAppStore = defineStore('appStore', {
         updatePlaybackState({ currentTime, playing }) {
             this.currentPlaybackTime = currentTime;
             this.isPlaying = playing;
+        },
+        trackFrame() {
+            // Called each time a frame is processed/decoded
+
+            const now = performance.now();
+            this.timestamps.push(now);
+            // Keep a rolling buffer, e.g. last 120 frames
+            if (this.timestamps.length > 120) {
+                this.timestamps.shift();
+            }
+
+            // Optionally, update FPS no more than ~4 times/sec
+            if (now - this.lastFPSUpdate > 250) {
+                this.lastFPSUpdate = now;
+
+                if (this.timestamps.length > 1) {
+                    const first = this.timestamps[0];
+                    const last = this.timestamps[this.timestamps.length - 1];
+                    const deltaSeconds = (last - first) / 1000;
+                    const frameCount = this.timestamps.length - 1;
+                    const fps = frameCount / deltaSeconds;
+                    this.fpsNow = Math.round(fps);
+                }
+            }
         }
     },
     getters: {
         fps() {
-            const now = performance.now();
-            this.timestamps.push(now);
-            if (this.timestamps.length > 150) this.timestamps.shift();
-            if (now - this.lastFPSUpdate > 250) {
-                this.lastFPSUpdate = now;
-                if (this.timestamps.length > 1) {
-                    const timeSpan = (this.timestamps[this.timestamps.length - 1] - this.timestamps[0]) / 1000;
-                    this.fpsNow = (this.timestamps.length - 1) / timeSpan;
-                }
-            }
-            return parseInt(this.fpsNow);
+            return this.fpsNow
         }
     }
 });
