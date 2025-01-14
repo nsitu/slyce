@@ -19,6 +19,14 @@
         isPrimary: {
             type: Boolean,
             default: false
+        },
+        hasControls: {
+            type: Boolean,
+            default: true
+        },
+        isMuted: {
+            type: Boolean,
+            default: true
         }
     });
 
@@ -141,7 +149,8 @@
             ref="videoElement"
             v-if="url"
             :src="url"
-            controls
+            :controls="hasControls"
+            :muted="isMuted"
             loop
             autoplay
         ></video>

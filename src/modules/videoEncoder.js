@@ -1,7 +1,7 @@
 import { useAppStore } from '../stores/appStore';
 
 // inside tileBuilder completion callback or processVideo:
-const encodeVideo = async (imageBitmaps, tilePlan, tileNumber) => {
+const encodeVideo = async (imageBitmaps, tilePlan, tileNumber, crossSectionType) => {
 
 
     const app = useAppStore()  // Pinia store 
@@ -33,11 +33,14 @@ const encodeVideo = async (imageBitmaps, tilePlan, tileNumber) => {
 
         // 3. Post the imageBitmaps to the worker, transferring them
         //    so the main thread no longer has them
+        //    we will also need to transfer information about 
+        console.log(tilePlan)
         worker.postMessage({
             type: 'ENCODE_TILE',
             data: {
                 imageBitmaps,       // array of imageBitmaps
-                tilePlan
+                tilePlan,
+                crossSectionType
             }
         }, imageBitmaps); // imageBitmaps is transferable
     });

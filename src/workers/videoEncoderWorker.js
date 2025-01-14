@@ -19,9 +19,9 @@ self.onmessage = async (e) => {
 
         try {
 
+            const { tilePlan, imageBitmaps, crossSectionType } = data;
 
-            imageBitmaps = data.imageBitmaps;
-            const { tilePlan } = data;
+
 
             // 1. Create Muxer
             const muxer = new Muxer({
@@ -59,11 +59,22 @@ self.onmessage = async (e) => {
                 bitrate: 3e6
             });
 
+            // if we are using planes, a forward + reverse loop makes sense
+            // however, if we are using waves, we should just encode the frames
             // 3. Encode frames (for forward + reverse loop)
-            const frames = [
-                ...imageBitmaps,
-                ...imageBitmaps.slice().reverse()
-            ];
+
+            let frames = []
+            if (crossSectionType == 'planes') {
+                frames = [
+                    ...imageBitmaps,
+                    ...imageBitmaps.slice().reverse()
+                ];
+            }
+            else if (crossSectionType == 'waves') {
+                frames = [
+                    ...imageBitmaps
+                ];
+            }
             totalFrames = frames.length;
 
             // Just an example frameRate:

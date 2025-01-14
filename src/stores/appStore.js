@@ -8,7 +8,7 @@ export const useAppStore = defineStore('appStore', {
         frameNumber: 0,
         useShortSide: true,
         crossSectionCount: 60,
-        crossSectionType: 'plane', // plane, wave
+        crossSectionType: 'planes', // planes, waves
         samplingMode: 'rows',       // rows, columns
         outputMode: 'rows',         // rows, columns
         tileMode: 'tile',           // tile, full

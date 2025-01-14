@@ -18,6 +18,7 @@ const processVideo = async (settings) => {
         outputMode,
         config,
         crossSectionCount,
+        crossSectionType
     } = settings
 
     const app = useAppStore()  // Pinia store 
@@ -54,7 +55,9 @@ const processVideo = async (settings) => {
                 fileInfo,
                 samplingMode,
                 outputMode,
-                crossSectionCount
+                crossSectionCount,
+                crossSectionType,
+                frameCount: app.frameCount
             });
 
             // listen for when the tile is complete
@@ -62,7 +65,7 @@ const processVideo = async (settings) => {
                 delete tileBuilders[tileNumber];
 
                 // encode the completed tile frames into a video
-                const blob = await encodeVideo(imageBitmaps, tilePlan, tileNumber);
+                const blob = await encodeVideo(imageBitmaps, tilePlan, tileNumber, crossSectionType);
                 app.createBlob(tileNumber, { blob, url: URL.createObjectURL(blob) });
                 app.set('currentTab', '3');
             });

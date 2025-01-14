@@ -68,16 +68,16 @@
                 <label
                     style="max-width: 15rem;"
                     class="flex flex-col grow items-start gap-2"
-                    for="plane"
-                    :class="(app.crossSectionType === 'plane') ? 'activeLabel' : ''"
+                    for="planes"
+                    :class="(app.crossSectionType === 'planes') ? 'activeLabel' : ''"
                 >
 
                     <div class="flex items-center gap-2 w-full">
                         <RadioButton
                             v-model="app.crossSectionType"
-                            inputId="plane"
+                            inputId="planes"
                             name="crossSectionType"
-                            value="plane"
+                            value="planes"
                         />
                         <span>Planes</span>
                         <svg
@@ -135,15 +135,15 @@
                 <label
                     class="flex flex-col grow items-start gap-2"
                     style="max-width: 15rem;"
-                    for="corrugated"
-                    :class="(app.crossSectionType === 'corrugated') ? 'activeLabel' : ''"
+                    for="waves"
+                    :class="(app.crossSectionType === 'waves') ? 'activeLabel' : ''"
                 >
                     <div class="flex items-center gap-2 w-full">
                         <RadioButton
                             v-model="app.crossSectionType"
-                            inputId="corrugated"
+                            inputId="waves"
                             name="crossSectionType"
-                            value="corrugated"
+                            value="waves"
                         />
 
                         <span>Waves</span>
@@ -293,6 +293,7 @@
                     frameCount: app.frameCount,
                     fileInfo: app.fileInfo,
                     crossSectionCount: app.crossSectionCount,
+                    crossSectionType: app.crossSectionType,
                 })"
             >Process</button>
         </div>
@@ -310,8 +311,9 @@
     }
 
     .tile-container-columns {
-        display: flex;
+        display: grid;
         gap: 0.5rem;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
     }
 
     .tile-container-rows {
