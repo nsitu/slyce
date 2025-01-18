@@ -6,7 +6,6 @@ export const useAppStore = defineStore('appStore', {
         config: {},
         frameCount: 0,
         frameNumber: 0,
-        useShortSide: true,
         crossSectionCount: 60,
         crossSectionType: 'planes', // planes, waves
         samplingMode: 'rows',       // rows, columns
@@ -19,23 +18,14 @@ export const useAppStore = defineStore('appStore', {
         samplePixelCount: 0, /** equals width or height depending on samplingMode */
         messages: [],
         status: {},
-        pauseDecode: null,
-        resumeDecode: null,
-        blob: null,
-        blobURL: null,
 
         fpsNow: 0,          // current FPS measurement
         timestamps: [],     // store recent frame timestamps
         lastFPSUpdate: 0,   // helps ensure we don't recalc FPS too often
 
         currentTab: '0',
-        // Canvasses are
-        // -provided by canvasPool
-        // -populated with samples
-        // -encoded into animations
-        canvasses: {},
         tilePlan: {},
-        blobs: {},
+        blobURLs: {},
         // New properties for synchronization
         currentPlaybackTime: 0,
         isPlaying: false,
@@ -47,35 +37,11 @@ export const useAppStore = defineStore('appStore', {
         log(message) {
             this.messages.push(message);
         },
-        allocateCanvas(tileNumber, canvas) {
-            // initialize an array if needed for this particualr tileNumber
-            this.canvasses[tileNumber] = this.canvasses[tileNumber] || [];
-            this.canvasses[tileNumber].push(canvas);
-        },
-        createBlob(tileNumber, blob) {
-            // Initialize the blob for the given tileNumber
-            this.blobs[tileNumber] = blob;
+        addBlobURL(tileNumber, blob) {
+            this.blobURLs[tileNumber] = blob;
         },
         setStatus(key, value) {
             this.status[key] = value;
-        },
-        initializeDecodeControl() {
-            this.pauseDecode = new Promise(resolve => {
-                this.resumeDecode = resolve;
-            });
-        },
-        async pauseIfNeeded() {
-            if (this.pauseDecode) {
-                await this.pauseDecode;
-            }
-        },
-        resumeDecoding() {
-            if (this.resumeDecode) {
-                // Resolve the promise to continue the process
-                this.resumeDecode();
-                // Reinitialize pause and resume promises
-                this.initializeDecodeControl();
-            }
         },
         // Playback control
         updatePlaybackState({ currentTime, playing }) {
@@ -108,6 +74,8 @@ export const useAppStore = defineStore('appStore', {
         }
     },
     getters: {
+        // Not to overcomplicate things, but there would also
+        // be a separate FPS for encoding tiles. 
         fps() {
             return this.fpsNow
         }

@@ -1,4 +1,10 @@
 // tileBuilder.js
+// constructing tiles is the main work of this app
+// it is also the main bottleneck
+// we are not constrained by the decoding process,
+// but rather by the tile building process.
+// so this would be the place to optimize things
+// if you are going to optimize them anywhere.
 import { EventEmitter } from 'events';  // https://www.npmjs.com/package/events
 
 export class TileBuilder extends EventEmitter {

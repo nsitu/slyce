@@ -60,7 +60,6 @@ const decodePackets = async (reader) => {
             await videoDecoder.flush();
             return;
         }
-        //if (decoder.decodeQueueSize > 400) { await pauseDecode; }
         // Decode the video chunk
         let chunk = new EncodedVideoChunk({
             type: value.keyframe ? 'key' : 'delta',

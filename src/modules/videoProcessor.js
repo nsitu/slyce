@@ -66,7 +66,7 @@ const processVideo = async (settings) => {
 
                 // encode the completed tile frames into a video
                 const blob = await encodeVideo(imageBitmaps, tilePlan, tileNumber, crossSectionType);
-                app.createBlob(tileNumber, { blob, url: URL.createObjectURL(blob) });
+                app.addBlobURL(tileNumber, URL.createObjectURL(blob));
                 app.set('currentTab', '3');
             });
         }

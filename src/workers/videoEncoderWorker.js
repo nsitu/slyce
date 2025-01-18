@@ -52,11 +52,13 @@ self.onmessage = async (e) => {
                 }
             });
 
+            // TODO: allow the user to select the bitrate 
+            // in the settingsArea
             videoEncoder.configure({
                 codec: 'vp09.00.10.08',
                 width: tilePlan.width,
                 height: tilePlan.height,
-                bitrate: 3e6
+                bitrate: 10e6
             });
 
             // if we are using planes, a forward + reverse loop makes sense
@@ -100,9 +102,19 @@ self.onmessage = async (e) => {
             // 6. Create a blob from the muxer
             const blob = new Blob([muxer.target.buffer]);
 
+
+            // Transfer ArrayBuffer instead of Blob
+            self.postMessage(
+                {
+                    type: 'DONE',
+                    buffer: muxer.target.buffer
+                },
+                [muxer.target.buffer]
+            );
+
             // 7. Respond back with the Blob
             // (we can’t *transfer* a Blob, but we can post it as is)
-            self.postMessage({ type: 'DONE', blob });
+            // self.postMessage({ type: 'DONE', blob });
 
             // Optional: close the worker once done
             // self.close();

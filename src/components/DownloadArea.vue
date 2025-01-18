@@ -5,13 +5,13 @@
         <div :class="parentContainerClasses">
             <!-- Video Player Container with Dynamic Flex Direction -->
             <div
-                v-for="(blob, tileNumber) in app.blobs"
+                v-for="(blobURL, tileNumber) in app.blobURLs"
                 :key="tileNumber"
                 :class="videoPlayerContainerClasses"
             >
                 <div class="relative group w-full">
                     <VideoPlayer
-                        :url="blob.url"
+                        :url="blobURL"
                         :playbackTime="app.currentPlaybackTime"
                         :isPlaying="app.isPlaying"
                         :isPrimary="tileNumber === '0'"
@@ -22,16 +22,16 @@
                     />
                     <!-- Download Button Overlay -->
                     <button
-                        :disabled="downloadingTiles.has(blob.url)"
+                        :disabled="downloadingTiles.has(blobURL)"
                         class="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
-                        @click="download(blob.url, tileNumber)"
+                        @click="download(blobURL, tileNumber)"
                         aria-label="'Download Video Tile ' + tileNumber"
                     >
-                        <span v-if="downloadingTiles.has(blob.url)">Downloading...</span>
+                        <span v-if="downloadingTiles.has(blobURL)">Downloading...</span>
                         <span v-else>Download</span>
                         <!-- Optional: Add a spinner icon -->
                         <svg
-                            v-if="downloadingTiles.has(blob.url)"
+                            v-if="downloadingTiles.has(blobURL)"
                             class="animate-spin h-5 w-5 text-white ml-2"
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"

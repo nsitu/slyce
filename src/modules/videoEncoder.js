@@ -15,14 +15,16 @@ const encodeVideo = async (imageBitmaps, tilePlan, tileNumber, crossSectionType)
     // 2. Return a promise that resolves when encoding is done
     return new Promise((resolve, reject) => {
         worker.onmessage = (e) => {
-            const { type, blob, data } = e.data;
+            const { type, buffer, data } = e.data;
             switch (type) {
                 case 'PROGRESS':
                     app.setStatus(`Encoding Tile ${tileNumber}`, `Encoded frame ${data.framesEncoded} of ${data.totalFrames}`);
                     break;
                 case 'DONE':
+                    // Convert ArrayBuffer to Blob
+                    const blob = new Blob([buffer], { type: 'video/webm' });
                     resolve(blob);
-                    worker.terminate(); // kill this short-lived worker
+                    worker.terminate();
                     break;
                 case 'ERROR':
                     reject(new Error(data));
