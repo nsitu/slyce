@@ -1,7 +1,6 @@
 import { useAppStore } from '../stores/appStore';
-import { demuxer } from './webDemuxer.js';
+import { Input, ALL_FORMATS, BlobSource, VideoSampleSink } from 'mediabunny';
 import { resourceUsageReport } from './resourceMonitor.js';
-import { frameGenerator } from './videoDecoder.js';
 import { encodeVideo } from './videoEncoder.js';
 import { TileBuilder } from './tileBuilder.js';
 
@@ -27,10 +26,21 @@ const processVideo = async (settings) => {
     app.set('currentTab', '2')
     app.set('readerIsFinished', false)
 
-    // Start decoding by sending the stream
-    const stream = demuxer.readAVPacket(0, 0, 0, -1);
+    // Create mediabunny input and video sample sink
+    const input = new Input({
+        formats: ALL_FORMATS,
+        source: new BlobSource(app.file),
+    });
 
-    for await (const videoFrame of frameGenerator(config, stream)) {
+    const videoTrack = await input.getPrimaryVideoTrack();
+    const sink = new VideoSampleSink(videoTrack);
+
+    // Iterate through decoded video samples
+    // VideoSampleSink automatically decodes frames using WebCodecs (non-blocking)
+    for await (const videoSample of sink.samples()) {
+
+        // Convert VideoSample to VideoFrame for compatibility with tileBuilder
+        const videoFrame = videoSample.toVideoFrame();
 
         frameNumber++;
         app.frameNumber = frameNumber;
@@ -82,8 +92,9 @@ const processVideo = async (settings) => {
         // the Queue size 
         resourceUsageReport();
 
-        // Release the VideoFrame
-        videoFrame.close();
+        // Note: videoFrame.close() is called by tileBuilder after drawing
+        // Close the videoSample (separate from videoFrame)
+        videoSample.close();
 
     }
 

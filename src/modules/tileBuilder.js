@@ -243,8 +243,9 @@ export class TileBuilder extends EventEmitter {
 
             }
         })
-        // TODO: make sure all the drawImage calls are finished before closing the videoFrame
 
+        // Release the VideoFrame now that all drawing is complete
+        videoFrame.close();
 
         // Check if this is the last frame of the tile
         if (frameNumber === tilePlan.tiles[tileNumber].end) {
