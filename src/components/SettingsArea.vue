@@ -252,10 +252,24 @@
                     }, {
                         name: 'quality',
                         value: 'quality'
+                    }, {
+                        name: 'powers of two',
+                        value: 'powersOfTwo'
                     }]"
                     optionValue="value"
                     optionLabel="name"
                 />
+            </div>
+            <div
+                v-if="app.tileMode === 'tile' && app.prioritize === 'powersOfTwo'"
+                class="flex gap-2 justify-start items-center"
+            >
+                <span>with a resolution of</span>
+                <Select
+                    v-model="app.potResolution"
+                    :options="[128, 256, 512, 1024]"
+                />
+                <span>pixels</span>
             </div>
             <ExplanatoryMessages
                 style="max-width: 31.5rem;"

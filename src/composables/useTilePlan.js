@@ -82,6 +82,15 @@ export function useTilePlan() {
                         plan.isScaled = true;
                         plan.scaleFrom = spatialSide;
                         plan.scaleTo = plan.width;
+                    } else if (app.prioritize === 'powersOfTwo') {
+                        // Prioritize power-of-two resolution
+                        plan.isScaled = true;
+                        plan.width = app.potResolution; // Spatial side (POT)
+                        plan.height = Math.floor(app.potResolution / aspectRatio); // Temporal side
+                        framesPerTile = plan.height;
+                        plan.length = Math.floor(app.frameCount / framesPerTile);
+                        plan.scaleFrom = spatialSide;
+                        plan.scaleTo = app.potResolution;
                     }
                 } else if (app.outputMode === 'columns') {
                     framesPerTile = Math.floor(spatialSide * aspectRatio);
@@ -105,6 +114,15 @@ export function useTilePlan() {
                         plan.isScaled = true;
                         plan.scaleFrom = spatialSide;
                         plan.scaleTo = plan.height;
+                    } else if (app.prioritize === 'powersOfTwo') {
+                        // Prioritize power-of-two resolution
+                        plan.isScaled = true;
+                        plan.height = app.potResolution; // Spatial side (POT)
+                        plan.width = Math.floor(app.potResolution * aspectRatio); // Temporal side
+                        framesPerTile = plan.width;
+                        plan.length = Math.floor(app.frameCount / framesPerTile);
+                        plan.scaleFrom = spatialSide;
+                        plan.scaleTo = app.potResolution;
                     }
                 }
             } else if (app.samplingMode === 'columns') {
@@ -131,6 +149,15 @@ export function useTilePlan() {
                         plan.isScaled = true;
                         plan.scaleFrom = spatialSide;
                         plan.scaleTo = plan.width;
+                    } else if (app.prioritize === 'powersOfTwo') {
+                        // Prioritize power-of-two resolution
+                        plan.isScaled = true;
+                        plan.width = app.potResolution; // Spatial side (POT)
+                        plan.height = Math.floor(app.potResolution / aspectRatio); // Temporal side
+                        framesPerTile = plan.height;
+                        plan.length = Math.floor(app.frameCount / framesPerTile);
+                        plan.scaleFrom = spatialSide;
+                        plan.scaleTo = app.potResolution;
                     }
                 } else if (app.outputMode === 'columns') {
                     framesPerTile = Math.floor(spatialSide * aspectRatio);
@@ -152,6 +179,15 @@ export function useTilePlan() {
                         plan.isScaled = true;
                         plan.scaleFrom = spatialSide;
                         plan.scaleTo = plan.height;
+                    } else if (app.prioritize === 'powersOfTwo') {
+                        // Prioritize power-of-two resolution
+                        plan.isScaled = true;
+                        plan.height = app.potResolution; // Spatial side (POT)
+                        plan.width = Math.floor(app.potResolution * aspectRatio); // Temporal side
+                        framesPerTile = plan.width;
+                        plan.length = Math.floor(app.frameCount / framesPerTile);
+                        plan.scaleFrom = spatialSide;
+                        plan.scaleTo = app.potResolution;
                     }
                 }
             }

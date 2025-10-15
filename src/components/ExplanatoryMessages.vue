@@ -103,7 +103,19 @@
                     </div>
                 </AccordionHeader>
                 <AccordionContent>
-                    <p class="m-0 text-left">
+                    <p
+                        v-if="app.prioritize === 'powersOfTwo'"
+                        class="m-0 text-left"
+                    >
+                        Scaling down from {{ plan.scaleFrom }}px to {{ plan.scaleTo }}px.
+                        {{ app.outputMode === 'rows' ? plan.height : plan.width }} sampled {{ app.samplingMode }} are
+                        sufficient for {{ plan.length }} {{ plan.length == 1 ? 'tile' : 'tiles' }} of {{ plan.scaleTo
+                        }}px.
+                    </p>
+                    <p
+                        v-else
+                        class="m-0 text-left"
+                    >
                         {{ app.frameCount }} sampled {{ app.samplingMode }} are sufficient for {{ plan.length }} {{
                             plan.length ==
                                 1 ? 'tile' : 'tiles' }} of {{ plan.scaleTo }}px. Downsampling from {{ plan.scaleFrom }}px to
