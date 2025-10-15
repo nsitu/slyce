@@ -1,4 +1,4 @@
-# Testing Web Codecs
+# Slyce
 This demo creates an artistic cross section of a video using WebCodecs, WebDemuxer, and Canvas. One row of pixels is sampled from each frame. Canvas dimensions are set based on frame count.  
 
 # Development
