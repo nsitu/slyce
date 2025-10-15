@@ -1,11 +1,13 @@
 import { WebDemuxer } from "web-demuxer"
 
 // Setup WebDemuxer
-// NOTE: this assumes that vite.config.mjs is configured
-// to copy wasm files from node_modules/web-demuxer/dist/wasm-files/*
-// into a public ./wasm-files folder during the build process
+// NOTE: WASM files are manually copied to public/wasm-files/
+// Current version: web-demuxer v3.0.2
+// To update: 
+// copy "node_modules/web-demuxer/dist/wasm-files/*" 
+// to "public/wasm-files/" 
 const demuxer = new WebDemuxer({
-    wasmLoaderPath: `${window.location.href}wasm-files/ffmpeg.js`
+    wasmFilePath: `${window.location.href}wasm-files/web-demuxer.wasm`
 });
 
 export { demuxer };

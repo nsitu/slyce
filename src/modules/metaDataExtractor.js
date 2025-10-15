@@ -15,9 +15,9 @@ const getMetaData = async () => {
         app.log(`Loading Video Decoder Config`)
         await demuxer.load(app.file);
         let info = await demuxer.getAVStream();
-        let config = await demuxer.getVideoDecoderConfig();
+        let config = await demuxer.getDecoderConfig('video'); // Updated for web-demuxer v3.x API
         console.log('getAVStream', info)
-        console.log('getVideoDecoderConfig', config)
+        console.log('getDecoderConfig', config)
         app.set('frameCount', Number(info.nb_frames))
         app.set('fileInfo', { ...info, name: app.file.name })
         app.set('config', config)
