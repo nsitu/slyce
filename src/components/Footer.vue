@@ -15,9 +15,9 @@
                 WebCodecs</a>,
             <a
                 target="_blank"
-                href="https://github.com/ForeverSc/web-demuxer"
+                href="https://github.com/Vanilagy/mediabunny"
             >
-                WebDemuxer</a>, and
+                mediabunny</a>, and
             <a
                 target="_blank"
                 href="https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API"
