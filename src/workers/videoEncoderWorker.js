@@ -1,5 +1,5 @@
 // tileEncoderWorker.js
-import { Muxer, ArrayBufferTarget } from 'webm-muxer';
+import { Output, WebMOutputFormat, BufferTarget, CanvasSource, QUALITY_HIGH } from 'mediabunny';
 
 let totalFrames = 0;
 let framesEncoded = 0;
@@ -21,45 +21,24 @@ self.onmessage = async (e) => {
 
             const { tilePlan, imageBitmaps, crossSectionType } = data;
 
-
-
-            // 1. Create Muxer
-            const muxer = new Muxer({
-                target: new ArrayBufferTarget(),
-                video: {
-                    codec: 'V_VP9',
-                    width: tilePlan.width,
-                    height: tilePlan.height
-                },
-                fastStart: 'in-memory'
+            // 1. Create Output with WebM format
+            const output = new Output({
+                format: new WebMOutputFormat(),
+                target: new BufferTarget(),
             });
 
-            // 2. Create VideoEncoder
-            const videoEncoder = new VideoEncoder({
-                output: (chunk, meta) => {
-                    framesEncoded++;
-                    self.postMessage({
-                        type: 'PROGRESS',
-                        data: {
-                            framesEncoded,
-                            totalFrames
-                        }
-                    });
-                    muxer.addVideoChunk(chunk, meta);
-                },
-                error: (err) => {
-                    self.postMessage({ type: 'ERROR', data: err.message });
-                }
-            });
+            // 2. Create CanvasSource for video encoding
+            // We'll create a temporary canvas to feed frames to mediabunny
+            const canvas = new OffscreenCanvas(tilePlan.width, tilePlan.height);
+            const ctx = canvas.getContext('2d');
 
             // TODO: allow the user to select the bitrate 
             // in the settingsArea
-            videoEncoder.configure({
-                codec: 'vp09.00.10.08',
-                width: tilePlan.width,
-                height: tilePlan.height,
-                bitrate: 10e6
+            const videoSource = new CanvasSource(canvas, {
+                codec: 'vp9',
+                bitrate: 10e6 // 10 Mbps
             });
+            output.addVideoTrack(videoSource);
 
             // if we are using planes, a forward + reverse loop makes sense
             // however, if we are using waves, we should just encode the frames
@@ -79,37 +58,45 @@ self.onmessage = async (e) => {
             }
             totalFrames = frames.length;
 
+            // Start the output
+            await output.start();
+
             // Just an example frameRate:
             const frameRate = 30;
-            const frameDuration = 1e6 / frameRate; // microseconds
+            const frameDuration = 1 / frameRate; // seconds
 
             for (let i = 0; i < frames.length; i++) {
-                // Convert the canvas to a VideoFrame
-                const videoFrame = new VideoFrame(frames[i], {
-                    timestamp: i * frameDuration,
-                    duration: frameDuration
+                // Draw the ImageBitmap to the canvas
+                ctx.clearRect(0, 0, tilePlan.width, tilePlan.height);
+                ctx.drawImage(frames[i], 0, 0);
+
+                // Add frame to video source
+                await videoSource.add(i * frameDuration, frameDuration);
+
+                framesEncoded++;
+                self.postMessage({
+                    type: 'PROGRESS',
+                    data: {
+                        framesEncoded,
+                        totalFrames
+                    }
                 });
-                videoEncoder.encode(videoFrame, { keyFrame: i % 30 === 0 });
-                videoFrame.close();
             }
 
-            // 4. Flush the encoder
-            await videoEncoder.flush();
+            // 4. Finalize the output
+            await output.finalize();
 
-            // 5. Finalize the muxer
-            muxer.finalize();
-
-            // 6. Create a blob from the muxer
-            const blob = new Blob([muxer.target.buffer]);
+            // 5. Get the buffer from the output
+            const buffer = output.target.buffer;
 
 
             // Transfer ArrayBuffer instead of Blob
             self.postMessage(
                 {
                     type: 'DONE',
-                    buffer: muxer.target.buffer
+                    buffer: buffer
                 },
-                [muxer.target.buffer]
+                [buffer]
             );
 
             // 7. Respond back with the Blob

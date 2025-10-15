@@ -11,14 +11,13 @@
         "@vueuse/core": "^13.9.0",
         "canvas-size": "^2.0.0",
         "events": "^3.3.0",
-        "mp4-muxer": "^5.2.2",
+        "mediabunny": "^1.23.0",
         "pinia": "^3.0.3",
         "primevue": "^4.4.1",
         "vite": "^7.1.10",
         "vite-plugin-static-copy": "^3.1.4",
         "vue": "^3.5.22",
         "web-demuxer": "^3.0.2",
-        "webm-muxer": "^5.1.4",
         "workerpool": "^9.3.4"
     },
     "devDependencies": {
