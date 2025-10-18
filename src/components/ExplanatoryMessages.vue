@@ -100,6 +100,16 @@
                         <span>to</span>
                         <span> {{ plan.scaleTo }}<span style="font-variant: small-caps;">px</span></span>
 
+                        <!-- Strategy indicator -->
+                        <span
+                            v-if="app.downsampleStrategy === 'upfront'"
+                            class="text-sm text-gray-600"
+                        >(smooth)</span>
+                        <span
+                            v-if="app.downsampleStrategy === 'perSample'"
+                            class="text-sm text-gray-600"
+                        >(fast)</span>
+
                     </div>
                 </AccordionHeader>
                 <AccordionContent>
@@ -107,7 +117,13 @@
                         v-if="app.prioritize === 'powersOfTwo'"
                         class="m-0 text-left"
                     >
-                        Scaling down from {{ plan.scaleFrom }}px to {{ plan.scaleTo }}px.
+                        Scaling down from {{ plan.scaleFrom }}px to {{ plan.scaleTo }}px
+                        <span v-if="app.downsampleStrategy === 'upfront'">
+                            via upfront frame downsampling for smoother results
+                        </span>
+                        <span v-if="app.downsampleStrategy === 'perSample'">
+                            via fast per-sample downsampling
+                        </span>.
                         {{ app.outputMode === 'rows' ? plan.height : plan.width }} sampled {{ app.samplingMode }} are
                         sufficient for {{ plan.length }} {{ plan.length == 1 ? 'tile' : 'tiles' }} of {{ plan.scaleTo
                         }}px.
@@ -118,9 +134,14 @@
                     >
                         {{ app.frameCount }} sampled {{ app.samplingMode }} are sufficient for {{ plan.length }} {{
                             plan.length ==
-                                1 ? 'tile' : 'tiles' }} of {{ plan.scaleTo }}px. Downsampling from {{ plan.scaleFrom }}px to
-                        retain
-                        proportions.
+                                1 ? 'tile' : 'tiles' }} of {{ plan.scaleTo }}px. Downsampling from {{ plan.scaleFrom }}px
+                        <span v-if="app.downsampleStrategy === 'upfront'">
+                            via upfront frame downsampling for smoother results
+                        </span>
+                        <span v-if="app.downsampleStrategy === 'perSample'">
+                            via fast per-sample downsampling
+                        </span>
+                        to retain proportions.
                     </p>
                 </AccordionContent>
             </AccordionPanel>

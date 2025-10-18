@@ -14,6 +14,7 @@ export const useAppStore = defineStore('appStore', {
         tileProportion: 'square',       // square, landscape, portrait
         prioritize: 'quantity',         // quantity, quality, powersOfTwo
         potResolution: 512,             // 128, 256, 512, 1024
+        downsampleStrategy: 'perSample', // perSample, upfront
         readerIsFinished: false,
         fileInfo: null,
         samplePixelCount: 0, /** equals width or height depending on samplingMode */
