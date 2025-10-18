@@ -260,50 +260,56 @@
                     optionLabel="name"
                 />
             </div>
+            <div
+                v-if="app.tileMode === 'tile'"
+                class="flex gap-2 justify-start items-center"
+            >
 
-            <div
-                v-if="app.tileMode === 'tile' && app.prioritize === 'powersOfTwo'"
-                class="flex gap-2 justify-start items-center"
-            >
-                <span>with</span>
-                <Select
-                    v-model="app.potResolution"
-                    :options="[{
-                        name: '128px',
-                        value: 128
-                    }, {
-                        name: '256px',
-                        value: 256
-                    }, {
-                        name: '512px',
-                        value: 512
-                    }, {
-                        name: '1024px',
-                        value: 1024
-                    }]"
-                    optionValue="value"
-                    optionLabel="name"
-                />
-                <span>resolution</span>
-            </div>
-            <div
-                v-if="app.tileMode === 'tile' && (app.prioritize === 'quantity' || app.prioritize === 'powersOfTwo')"
-                class="flex gap-2 justify-start items-center"
-            >
-                <span>using</span>
-                <Select
-                    v-model="app.downsampleStrategy"
-                    :options="[{
-                        name: 'per sample',
-                        value: 'perSample'
-                    }, {
-                        name: 'upfront',
-                        value: 'upfront'
-                    }]"
-                    optionValue="value"
-                    optionLabel="name"
-                />
-                <span>down-scaling</span>
+
+                <div
+                    v-if="app.prioritize === 'powersOfTwo'"
+                    class="flex gap-2 justify-start items-center"
+                >
+                    <span>with</span>
+                    <Select
+                        v-model="app.potResolution"
+                        :options="[{
+                            name: '128px',
+                            value: 128
+                        }, {
+                            name: '256px',
+                            value: 256
+                        }, {
+                            name: '512px',
+                            value: 512
+                        }, {
+                            name: '1024px',
+                            value: 1024
+                        }]"
+                        optionValue="value"
+                        optionLabel="name"
+                    />
+                    <span>resolution</span>
+                </div>
+                <div
+                    v-if="(app.prioritize === 'quantity' || app.prioritize === 'powersOfTwo')"
+                    class="flex gap-2 justify-start items-center"
+                >
+                    <span>using</span>
+                    <Select
+                        v-model="app.downsampleStrategy"
+                        :options="[{
+                            name: 'per sample',
+                            value: 'perSample'
+                        }, {
+                            name: 'upfront',
+                            value: 'upfront'
+                        }]"
+                        optionValue="value"
+                        optionLabel="name"
+                    />
+                    <span>down-scaling</span>
+                </div>
             </div>
             <ExplanatoryMessages
                 style="max-width: 31.5rem;"

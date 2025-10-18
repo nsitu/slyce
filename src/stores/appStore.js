@@ -6,15 +6,15 @@ export const useAppStore = defineStore('appStore', {
         config: {},
         frameCount: 0,
         frameNumber: 0,
-        crossSectionCount: 60,
-        crossSectionType: 'planes', // planes, waves
+        crossSectionCount: 30,
+        crossSectionType: 'waves', // planes, waves
         samplingMode: 'rows',       // rows, columns
         outputMode: 'rows',         // rows, columns
         tileMode: 'tile',           // tile, full
         tileProportion: 'square',       // square, landscape, portrait
-        prioritize: 'quantity',         // quantity, quality, powersOfTwo
+        prioritize: 'powersOfTwo',         // quantity, quality, powersOfTwo
         potResolution: 512,             // 128, 256, 512, 1024
-        downsampleStrategy: 'perSample', // perSample, upfront
+        downsampleStrategy: 'upfront', // perSample, upfront
         readerIsFinished: false,
         fileInfo: null,
         samplePixelCount: 0, /** equals width or height depending on samplingMode */
