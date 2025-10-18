@@ -370,10 +370,18 @@
         grid-template-columns: 1fr 1fr 1fr 1fr;
     }
 
+    /* Multi-column newspaper-style layout that flows top-to-bottom, then left-to-right */
     .tile-container-rows {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
+        column-count: 4;
+        column-gap: 0.5rem;
+        max-height: 80vh;
+        /* Adjust based on your needs */
+    }
+
+    /* Prevent tiles from breaking across columns */
+    .tile-container-rows>* {
+        break-inside: avoid;
+        margin-bottom: 0.5rem;
     }
 
 
