@@ -1,6 +1,4 @@
 
-import { getWasmThreadingDiagnostics } from './wasm-utils.js';
-
 // Android detection utility
 function isAndroid() {
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
@@ -49,10 +47,8 @@ function getSafariIOSDiagnostics() {
         crossOriginIsolated: isCrossOriginIsolated,
         userAgent: navigator.userAgent,
         // Safari/iOS specific capabilities
-        hasSharedArrayBuffer: typeof SharedArrayBuffer !== 'undefined',
         hasWebAssembly: typeof WebAssembly !== 'undefined',
-        hasWebWorker: typeof Worker !== 'undefined',
-        threadingDiagnostics: getWasmThreadingDiagnostics()
+        hasWebWorker: typeof Worker !== 'undefined'
     };
 }
 

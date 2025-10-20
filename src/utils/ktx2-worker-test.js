@@ -1,8 +1,7 @@
 /**
  * Test if KTX2 encoding works in Web Worker context
  * This tests whether the Basis encoder WASM module can be loaded,
- * initialized, and used for encoding inside a Web Worker,
- * and whether multithreading works in that context.
+ * initialized, and used for encoding inside a Web Worker.
  */
 export async function testKTX2Worker() {
     console.log('=== Testing KTX2 Encoding in Web Worker ===');
@@ -37,7 +36,6 @@ export async function testKTX2Worker() {
                 console.log('✅ KTX2 Worker Test PASSED');
                 console.log(`   Encoding time: ${data.elapsed.toFixed(1)}ms`);
                 console.log(`   Output size: ${(data.size / 1024).toFixed(1)}KB`);
-                console.log(`   Threading: ${data.threadingSupported ? `${data.threadCount} threads` : 'single-threaded'}`);
                 worker.terminate();
                 resolve(data);
             } else if (type === 'TEST_ERROR') {

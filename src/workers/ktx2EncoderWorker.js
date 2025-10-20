@@ -1,5 +1,3 @@
-import { threadingSupported, optimalThreadCount } from '../utils/wasm-utils.js';
-
 // We can't use getBasisModule() in a worker because it relies on the main thread's module
 // Instead, we need to load BASIS directly in the worker context
 
@@ -13,8 +11,7 @@ async function loadBasisInWorker() {
     console.log('[KTX2 Worker] Loading BASIS module in worker context...');
 
     // Module workers can't use importScripts(), so we fetch and eval instead
-    // NOTE: Always use non-threaded version in worker
-    // The threaded version tries to spawn its own workers which creates nested worker issues
+    // We use the single-threaded encoder (see /public/wasm/readme.md for architecture explanation)
     // Use import.meta.env.BASE_URL to handle both local dev and GitHub Pages deployment
     const basePath = import.meta.env.BASE_URL || '/';
     const scriptPath = `${basePath}wasm/basis_encoder.js`;
@@ -93,7 +90,7 @@ self.onmessage = async (e) => {
             // Create encoder instance for this frame
             const basisEncoder = new BasisEncoder();
 
-            // Single-threaded mode (threaded encoder not compatible with workers)
+            // Single-threaded mode (parallelism is managed by the worker pool)
             basisEncoder.controlThreading(false, 1);
 
             // Set up encoding buffer

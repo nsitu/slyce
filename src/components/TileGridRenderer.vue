@@ -96,6 +96,11 @@
         }
     }
 
+    //  TODO: refactor so that we don't need a complicated observer. 
+
+    // Store observer reference for cleanup
+    let intersectionObserver = null;
+
     // Mount: Just set up the container ref, don't initialize yet
     onMounted(async () => {
         await nextTick();
@@ -103,7 +108,7 @@
 
         // Also watch for when container becomes visible (e.g., tab switch)
         if (containerRef.value) {
-            const observer = new IntersectionObserver((entries) => {
+            intersectionObserver = new IntersectionObserver((entries) => {
                 const entry = entries[0];
                 if (entry.isIntersecting && !isInitialized.value) {
                     console.log('[TileGridRenderer.vue] Container became visible, checking if we can initialize...');
@@ -115,15 +120,19 @@
                 }
             });
 
-            observer.observe(containerRef.value);
-
-            // Clean up observer on unmount
-            onBeforeUnmount(() => observer.disconnect());
+            intersectionObserver.observe(containerRef.value);
         }
     });
 
-    // Cleanup on unmount
+    // Cleanup on unmount - must be registered synchronously before any async operations
     onBeforeUnmount(() => {
+        // Clean up intersection observer
+        if (intersectionObserver) {
+            intersectionObserver.disconnect();
+            intersectionObserver = null;
+        }
+
+        // Clean up renderer
         if (renderer) {
             renderer.dispose();
             renderer = null;

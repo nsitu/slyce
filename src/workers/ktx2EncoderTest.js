@@ -1,5 +1,3 @@
-import { threadingSupported, optimalThreadCount } from '../utils/wasm-utils.js';
-
 // We can't use getBasisModule() in a worker because it relies on the main thread's module
 // Instead, we need to load BASIS directly in the worker context
 
@@ -13,10 +11,9 @@ async function loadBasisInWorker() {
     console.log('[KTX2 Worker Test] Loading BASIS module in worker context...');
 
     // Module workers can't use importScripts(), so we fetch and eval instead
-    // NOTE: For now, always use non-threaded version in worker
-    // The threaded version tries to spawn its own workers which creates nested worker issues
+    // We use the single-threaded encoder (see /public/wasm/readme.md for architecture explanation)
     const scriptPath = '/wasm/basis_encoder.js';
-    console.log(`[KTX2 Worker Test] Fetching ${scriptPath} (non-threaded version for worker compatibility)...`);
+    console.log(`[KTX2 Worker Test] Fetching ${scriptPath}...`);
 
     try {
         // Fetch the script as text
@@ -91,9 +88,8 @@ self.onmessage = async (e) => {
             const basisEncoder = new BasisEncoder();
             console.log('[KTX2 Worker Test] BasisEncoder created');
 
-            // Note: In workers, we always use single-threaded mode
-            // The threaded encoder creates its own workers which causes issues
-            console.log('[KTX2 Worker Test] Using single-threaded mode (threaded encoder not compatible with workers)');
+            // Single-threaded mode (parallelism is managed by the worker pool)
+            console.log('[KTX2 Worker Test] Using single-threaded mode');
             basisEncoder.controlThreading(false, 1);
 
             // Set up encoding (small test)
@@ -137,9 +133,7 @@ self.onmessage = async (e) => {
                 type: 'TEST_SUCCESS',
                 data: {
                     elapsed,
-                    size: numOutputBytes,
-                    threadingSupported: false, // Always single-threaded in workers
-                    threadCount: 1
+                    size: numOutputBytes
                 }
             });
 

@@ -1,4 +1,3 @@
-import { threadingSupported } from '../utils/wasm-utils.js';
 import { getMemoryConstraints } from '../utils/memory-utils.js';
 
 let basisModule = null;
@@ -16,11 +15,10 @@ export async function loadBasisModule() {
 
     basisPromise = new Promise((resolve, reject) => {
 
-        const scriptSrc = threadingSupported ?
-            "./wasm/basis_encoder_threads.js" :
-            "./wasm/basis_encoder.js";
+        // Always use single-threaded encoder (see /public/wasm/readme.md for architecture explanation)
+        const scriptSrc = "./wasm/basis_encoder.js";
 
-        console.log(`[BASIS] Loading ${threadingSupported ? 'threaded' : 'non-threaded'} version`);
+        console.log('[BASIS] Loading single-threaded encoder');
         console.log(`[BASIS] Estimated available memory: ${constraints.estimatedAvailable}MB`);
 
         const script = document.createElement("script");

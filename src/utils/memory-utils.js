@@ -1,5 +1,4 @@
 import { isIOS, isSafari, isAndroid } from './user-agent-utils.js';
-import { threadingSupported, optimalThreadCount } from './wasm-utils.js';
 
 // Memory diagnostics and testing functions
 function getMemoryInfo(stage = 'unknown') {
@@ -9,12 +8,9 @@ function getMemoryInfo(stage = 'unknown') {
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         hardwareConcurrency: typeof navigator !== 'undefined' ? (navigator.hardwareConcurrency || 'unknown') : 'unknown',
         deviceMemory: typeof navigator !== 'undefined' ? (navigator.deviceMemory || 'unknown') : 'unknown',
-        threadingSupported,
-        optimalThreadCount,
         isIOS: isIOS(),
         isSafari: isSafari(),
         isAndroid: isAndroid(),
-        sharedArrayBufferSupported: typeof SharedArrayBuffer !== 'undefined',
     };
 
     // Performance memory API (if available - Chrome/Edge mainly)

@@ -1,5 +1,4 @@
 
-import { threadingSupported, optimalThreadCount } from '../utils/wasm-utils.js';
 import { getBasisModule } from './load_basis.js';
 import { calculateKTX2BufferSize, getFileExtension } from '../utils/image-utils.js';
 
@@ -15,7 +14,6 @@ import { calculateKTX2BufferSize, getFileExtension } from '../utils/image-utils.
 export class KTX2Encoder {
     constructor() {
         this.settings = {
-            multithreading: threadingSupported,
             uastcQuality: 1,
             rdoQuality: 1,
             rdoEnabled: false,
@@ -65,13 +63,8 @@ export class KTX2Encoder {
             const ktx2FileData = new Uint8Array(bufferSize);
             const basisEncoder = new BasisEncoder();
 
-            // Configure threading
-            if (this.settings.multithreading) {
-                console.log(`Using ${optimalThreadCount} threads for encoding`);
-                basisEncoder.controlThreading(true, optimalThreadCount);
-            } else {
-                basisEncoder.controlThreading(false, 1);
-            }
+            // Always use single-threaded mode (parallelism handled by worker pool)
+            basisEncoder.controlThreading(false, 1);
 
             // Set source image based on type
             if (isRGBA) {
