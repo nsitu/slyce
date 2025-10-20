@@ -274,9 +274,6 @@
                     optionLabel="name"
                 />
                 <span>tiles optimized for</span>
-                <!-- this used to be duration and resolution
-                 buy quanity/quality makes more sense as a description of the tiles.
-                 TODO: refactor components that depend on app.prioritize -->
                 <Select
                     v-model="app.prioritize"
                     :options="[{

@@ -96,7 +96,6 @@
         }
     }
 
-    //  TODO: refactor so that we don't need a complicated observer. 
 
     // Store observer reference for cleanup
     let intersectionObserver = null;

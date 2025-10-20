@@ -25,6 +25,39 @@
         <!-- Download UI (format-agnostic) -->
         <div class="download-section mt-6">
             <h4 class="text-lg font-semibold mb-3">Download Tiles</h4>
+
+            <!-- Download All Button -->
+            <button
+                @click="downloadAll"
+                :disabled="isDownloadingZip"
+                class="download-all-button bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition-colors duration-300 mb-4 flex items-center disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+                <span v-if="isDownloadingZip">Creating ZIP...</span>
+                <span v-else>Download All as ZIP</span>
+
+                <svg
+                    v-if="isDownloadingZip"
+                    class="animate-spin h-5 w-5 text-white ml-2"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                >
+                    <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                    ></circle>
+                    <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                </svg>
+            </button>
+
             <div class="flex flex-wrap gap-2">
                 <button
                     v-for="(blobURL, tileNumber) in currentBlobURLs"
@@ -76,8 +109,9 @@
 </template>
 
 <script setup>
-    import { computed, reactive } from 'vue';
+    import { computed, reactive, ref } from 'vue';
     import { downloadBlob } from '../modules/blobDownloader.js';
+    import { downloadAllAsZip } from '../modules/zipDownloader.js';
     import { useAppStore } from '../stores/appStore';
     import VideoGrid from './VideoGrid.vue';
     import TileGridRenderer from './TileGridRenderer.vue';
@@ -94,6 +128,7 @@
     const downloadingTiles = reactive(new Set());
     const downloadSuccess = reactive({});
     const downloadError = reactive({});
+    const isDownloadingZip = ref(false);
 
     // Download function
     const download = async (blobUrl, tileNumber) => {
@@ -120,6 +155,26 @@
             setTimeout(() => delete downloadError[tileNumber], 3000);
         } finally {
             downloadingTiles.delete(blobUrl);
+        }
+    };
+
+    // Download all tiles as ZIP
+    const downloadAll = async () => {
+        if (isDownloadingZip.value) return;
+
+        isDownloadingZip.value = true;
+
+        try {
+            const format = app.outputFormat === 'ktx2'
+                ? { mime: 'image/ktx2', extension: 'ktx2' }
+                : { mime: 'video/webm', extension: 'webm' };
+
+            await downloadAllAsZip(currentBlobURLs.value, app.fileInfo, format);
+        } catch (error) {
+            console.error('Failed to create ZIP:', error);
+            alert('Failed to create ZIP file. Files may be too large.');
+        } finally {
+            isDownloadingZip.value = false;
         }
     };
 
