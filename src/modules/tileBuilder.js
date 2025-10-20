@@ -1,16 +1,11 @@
-// tileBuilder.js
-// constructing tiles is the main work of this app
-// it is also the main bottleneck
-// we are not constrained by the decoding process,
-// but rather by the tile building process.
-// so this would be the place to optimize things
-// if you are going to optimize them anywhere.
+// tileBuilder.js 
 import { EventEmitter } from 'events';  // https://www.npmjs.com/package/events
 
 export class TileBuilder extends EventEmitter {
     constructor(settings) {
         super();
         this.settings = settings
+        this.outputFormat = settings.outputFormat || 'webm'; // Default to webm if not specified
         this.canvasses = this.createCanvasses();
     }
 
@@ -190,7 +185,7 @@ export class TileBuilder extends EventEmitter {
 
 
 
-                // NOTE: alternately we can determine the wavelength
+                // NOTE: alternately we could determine the wavelength
                 // based on the framecount of each individual tile
                 // as opposed to the framecount of the entire video
                 // const frameCount = tilePlan.tiles[tileNumber].end - tilePlan.tiles[tileNumber].start + 1;
@@ -236,7 +231,7 @@ export class TileBuilder extends EventEmitter {
                     dh = 1;
                 }
 
-                // Draw the sampled pixel onto the canvas
+                // Draw the sampled pixels onto the canvas
                 ctx.drawImage(videoFrame, sx, sy, sw, sh, dx, dy, dw, dh);
 
 
@@ -249,13 +244,31 @@ export class TileBuilder extends EventEmitter {
 
         // Check if this is the last frame of the tile
         if (frameNumber === tilePlan.tiles[tileNumber].end) {
-            //createImageBitmap(canvas).then(imageBitmap => {  
-            let images = this.canvasses.map(canvas => canvas.transferToImageBitmap());
-            // we are done with this tile, so emit an event
-            this.emit('complete', images);
-            //  “destroy” these canvasses
-            delete this.canvasses
+            let images, kind;
 
+            if (this.outputFormat === 'ktx2') {
+                // KTX2 mode: Extract RGBA pixel data
+                kind = 'ktx2';
+                images = this.canvasses.map(canvas => {
+                    const ctx = canvas.getContext('2d');
+                    const imageData = ctx.getImageData(0, 0, tilePlan.width, tilePlan.height);
+                    return {
+                        rgba: imageData.data, // Uint8ClampedArray with RGBA values
+                        width: tilePlan.width,
+                        height: tilePlan.height
+                    };
+                });
+            } else {
+                // WebM mode: Use ImageBitmap (existing behavior)
+                kind = 'webm';
+                images = this.canvasses.map(canvas => canvas.transferToImageBitmap());
+            }
+
+            // Emit consistent payload with kind discriminator
+            this.emit('complete', { images, kind });
+
+            // "destroy" these canvasses
+            delete this.canvasses
         }
 
     }

@@ -1,67 +1,75 @@
 <template>
     <div class="p-4">
         <h3 class="text-xl font-semibold mb-4">Results</h3>
-        <!-- Parent Container with Dynamic Layout -->
-        <div :class="parentContainerClasses">
-            <!-- Video Player Container with Dynamic Flex Direction -->
-            <div
-                v-for="(blobURL, tileNumber) in app.blobURLs"
-                :key="tileNumber"
-                :class="videoPlayerContainerClasses"
-            >
-                <div class="relative group w-full">
-                    <VideoPlayer
-                        :url="blobURL"
-                        :playbackTime="app.currentPlaybackTime"
-                        :isPlaying="app.isPlaying"
-                        :isPrimary="tileNumber === '0'"
-                        :hasControls="false"
-                        @playback-state-change="handlePlaybackStateChange"
-                        aria-label="'Video Tile ' + tileNumber"
-                        class="w-full h-auto rounded-md"
-                    />
-                    <!-- Download Button Overlay -->
-                    <button
-                        :disabled="downloadingTiles.has(blobURL)"
-                        class="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
-                        @click="download(blobURL, tileNumber)"
-                        aria-label="'Download Video Tile ' + tileNumber"
+
+        <!-- Grid Renderer (format-specific) -->
+        <div class="mb-4">
+            <!-- WebM Video Grid -->
+            <VideoGrid
+                v-if="app.outputFormat === 'webm'"
+                :blobURLs="app.blobURLs"
+                :outputMode="app.outputMode"
+                :playbackTime="app.currentPlaybackTime"
+                :isPlaying="app.isPlaying"
+                @playback-state-change="handlePlaybackStateChange"
+            />
+
+            <!-- KTX2 Three.js Renderer -->
+            <TileGridRenderer
+                v-else-if="app.outputFormat === 'ktx2'"
+                :ktx2BlobURLs="app.ktx2BlobURLs"
+                :outputMode="app.outputMode"
+            />
+        </div>
+
+        <!-- Download UI (format-agnostic) -->
+        <div class="download-section mt-6">
+            <h4 class="text-lg font-semibold mb-3">Download Tiles</h4>
+            <div class="flex flex-wrap gap-2">
+                <button
+                    v-for="(blobURL, tileNumber) in currentBlobURLs"
+                    :key="tileNumber"
+                    :disabled="downloadingTiles.has(blobURL)"
+                    class="download-button bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center"
+                    @click="download(blobURL, tileNumber)"
+                    :aria-label="`Download Tile ${tileNumber}`"
+                >
+                    <span v-if="downloadingTiles.has(blobURL)">Downloading...</span>
+                    <span v-else>Tile {{ tileNumber }}</span>
+
+                    <!-- Spinner -->
+                    <svg
+                        v-if="downloadingTiles.has(blobURL)"
+                        class="animate-spin h-5 w-5 text-white ml-2"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
                     >
-                        <span v-if="downloadingTiles.has(blobURL)">Downloading...</span>
-                        <span v-else>Download</span>
-                        <!-- Optional: Add a spinner icon -->
-                        <svg
-                            v-if="downloadingTiles.has(blobURL)"
-                            class="animate-spin h-5 w-5 text-white ml-2"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                class="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                stroke-width="4"
-                            ></circle>
-                            <path
-                                class="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v8H4z"
-                            ></path>
-                        </svg>
-                    </button>
-                    <!-- Success and Error Messages -->
+                        <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                        ></circle>
+                        <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v8H4z"
+                        ></path>
+                    </svg>
+
+                    <!-- Success/Error indicators -->
                     <span
                         v-if="downloadSuccess[tileNumber]"
-                        class="text-green-500 mt-1"
-                    >Downloaded!</span>
+                        class="ml-2"
+                    >✓</span>
                     <span
                         v-if="downloadError[tileNumber]"
-                        class="text-red-500 mt-1"
-                    >Failed to download.</span>
-                </div>
+                        class="ml-2"
+                    >✗</span>
+                </button>
             </div>
         </div>
     </div>
@@ -71,26 +79,15 @@
     import { computed, reactive } from 'vue';
     import { downloadBlob } from '../modules/blobDownloader.js';
     import { useAppStore } from '../stores/appStore';
-    import VideoPlayer from './VideoPlayer.vue';
+    import VideoGrid from './VideoGrid.vue';
+    import TileGridRenderer from './TileGridRenderer.vue';
 
     // Access the Pinia store
     const app = useAppStore();
 
-    // Computed property to retrieve the current outputMode from the store
-    const outputMode = computed(() => app.outputMode);
-
-    // Computed property for the parent container's classes
-    const parentContainerClasses = computed(() => {
-        return outputMode.value === 'columns'
-            ? 'flex flex-row flex-wrap gap-4 justify-start'
-            : 'flex flex-col gap-4';
-    });
-
-    // Computed property for each video-player-container's classes
-    const videoPlayerContainerClasses = computed(() => {
-        return outputMode.value === 'columns'
-            ? 'w-full sm:w-1/2 md:w-1/3 lg:w-1/4' // Responsive widths for columns
-            : 'w-full'; // Full width for rows
+    // Computed property for current blob URLs based on format
+    const currentBlobURLs = computed(() => {
+        return app.outputFormat === 'ktx2' ? app.ktx2BlobURLs : app.blobURLs;
     });
 
     // Reactive sets to track downloading, success, and error states
@@ -107,7 +104,12 @@
         delete downloadError[tileNumber];
 
         try {
-            await downloadBlob(blobUrl, tileNumber, app.fileInfo);
+            // Determine format descriptor based on output format
+            const format = app.outputFormat === 'ktx2'
+                ? { mime: 'image/ktx2', extension: 'ktx2' }
+                : { mime: 'video/webm', extension: 'webm' };
+
+            await downloadBlob(blobUrl, tileNumber, app.fileInfo, format);
             downloadSuccess[tileNumber] = true;
             // Remove success message after 3 seconds
             setTimeout(() => delete downloadSuccess[tileNumber], 3000);
@@ -128,22 +130,23 @@
 </script>
 
 <style scoped>
-    .video-player {
-        /* Ensure videos are responsive */
-        max-width: 100%;
-        height: auto;
-        border-radius: 0.375rem;
-        /* Rounded corners */
+    .download-section {
+        padding: 1rem;
+        background: #f5f5f5;
+        border-radius: 0.5rem;
     }
 
     .download-button {
-        /* Smooth color transition on hover */
+        min-width: 100px;
         transition: background-color 0.3s;
     }
 
-    .download-button:hover {
+    .download-button:hover:not(:disabled) {
         background-color: #2563eb;
-        /* Darker blue on hover */
     }
 
+    .download-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 </style>

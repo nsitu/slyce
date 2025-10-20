@@ -36,4 +36,40 @@ app.use(PrimeVue, {
 import Tooltip from 'primevue/tooltip';
 app.directive('tooltip', Tooltip);
 
-app.mount('#app');
+// Initialize BASIS Universal WASM for KTX2 encoding
+// This preloads the encoder so it's ready when needed
+import { loadBasisModule } from './modules/load_basis.js';
+import { useAppStore } from './stores/appStore.js';
+import { chooseRenderer } from './utils/renderer-utils.js';
+
+// Import KTX2 worker test
+import { testKTX2Worker } from './utils/ktx2-worker-test.js';
+
+// Expose test function to console for debugging
+window.testKTX2Worker = testKTX2Worker;
+console.log('[Main] To test KTX2 encoding in Web Worker, run: testKTX2Worker()');
+
+// Initialize app
+(async () => {
+    try {
+        // Choose renderer first
+        const rendererType = await chooseRenderer();
+
+        // Load BASIS module
+        await loadBasisModule();
+        console.log('[Main] BASIS module preloaded successfully');
+
+        // Mount app
+        app.mount('#app');
+
+        // Set renderer type in store after app is mounted (so store is available)
+        const store = useAppStore();
+        store.rendererType = rendererType;
+        console.log('[Main] Renderer type set in store:', rendererType);
+
+    } catch (error) {
+        console.error('[Main] Initialization error:', error);
+        // Mount anyway - app can still work with WebM
+        app.mount('#app');
+    }
+})();

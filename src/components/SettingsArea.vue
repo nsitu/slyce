@@ -60,8 +60,7 @@
             id="settings"
             class="flex flex-col gap-3 items-start"
         >
-            <h3 class="text-xl">Cross Sections</h3>
-            <p>Choose a sampling strategy:</p>
+            <h3 class="text-xl">Sampling</h3>
 
 
             <div class="flex w-full gap-6">
@@ -163,7 +162,6 @@
                 </label>
             </div>
 
-            <h3 class="text-xl">Sampling Configuration</h3>
 
             <div class="flex gap-2 justify-start items-center">
 
@@ -195,7 +193,42 @@
             </div>
 
 
-            <h3 class="text-xl">Output and Rendering</h3>
+            <h3 class="text-xl">Output</h3>
+
+            <div class="flex w-full gap-6">
+                <label
+                    style="max-width: 15rem;"
+                    class="flex flex-col grow items-start gap-2"
+                    for="webm"
+                    :class="(app.outputFormat === 'webm') ? 'activeLabel' : ''"
+                >
+                    <div class="flex items-center gap-2 w-full">
+                        <RadioButton
+                            v-model="app.outputFormat"
+                            inputId="webm"
+                            name="outputFormat"
+                            value="webm"
+                        />
+                        <span>Video Loop</span>
+                    </div>
+                </label>
+                <label
+                    style="max-width: 15rem;"
+                    class="flex flex-col grow items-start gap-2"
+                    for="ktx2"
+                    :class="(app.outputFormat === 'ktx2') ? 'activeLabel' : ''"
+                >
+                    <div class="flex items-center gap-2 w-full">
+                        <RadioButton
+                            v-model="app.outputFormat"
+                            inputId="ktx2"
+                            name="outputFormat"
+                            value="ktx2"
+                        />
+                        <span>KTX2 Texture Array</span>
+                    </div>
+                </label>
+            </div>
 
             <div class="flex gap-2 justify-start items-center">
                 <span>Join samples as</span>

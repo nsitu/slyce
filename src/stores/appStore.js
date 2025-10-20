@@ -31,6 +31,24 @@ export const useAppStore = defineStore('appStore', {
         // New properties for synchronization
         currentPlaybackTime: 0,
         isPlaying: false,
+
+        // Output format control
+        outputFormat: 'ktx2', // 'webm' | 'ktx2' (default 'ktx2' initially)
+
+        // KTX2-specific blob URLs (parallel to blobURLs)
+        ktx2BlobURLs: {},
+
+        // KTX2 playback state (separate from WebM video timing)
+        ktx2Playback: {
+            currentLayer: 0,      // current layer index (0 to layerCount-1)
+            layerCount: 0,        // total layers in texture array
+            isPlaying: false,     // play/pause state
+            fps: 30,              // playback speed (layers per second)
+            direction: 1,         // 1 = forward, -1 = reverse (for ping-pong mode)
+        },
+
+        // Renderer type selection (set during app initialization)
+        rendererType: 'webgl',    // 'webgl' | 'webgpu' (determined at runtime)
     }),
     actions: {
         set(key, value) {
@@ -41,6 +59,27 @@ export const useAppStore = defineStore('appStore', {
         },
         addBlobURL(tileNumber, blob) {
             this.blobURLs[tileNumber] = blob;
+        },
+        // Register blob URL for specific format and revoke any previous URL for same tile
+        registerBlobURL(format, tileNumber, blob) {
+            const blobStore = format === 'ktx2' ? this.ktx2BlobURLs : this.blobURLs;
+            // Revoke previous URL if exists
+            if (blobStore[tileNumber]) {
+                URL.revokeObjectURL(blobStore[tileNumber]);
+            }
+            blobStore[tileNumber] = URL.createObjectURL(blob);
+        },
+        // Revoke all blob URLs for a specific format
+        revokeBlobURLs(format) {
+            const blobStore = format === 'ktx2' ? this.ktx2BlobURLs : this.blobURLs;
+            Object.values(blobStore).forEach(url => {
+                if (url) URL.revokeObjectURL(url);
+            });
+            if (format === 'ktx2') {
+                this.ktx2BlobURLs = {};
+            } else {
+                this.blobURLs = {};
+            }
         },
         setStatus(key, value) {
             this.status[key] = value;
@@ -80,6 +119,13 @@ export const useAppStore = defineStore('appStore', {
         // be a separate FPS for encoding tiles. 
         fps() {
             return this.fpsNow
+        },
+        // Format mode getters for convenient access
+        isKTX2Mode() {
+            return this.outputFormat === 'ktx2';
+        },
+        isWebMMode() {
+            return this.outputFormat === 'webm';
         }
     }
 });
