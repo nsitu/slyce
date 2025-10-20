@@ -15,7 +15,9 @@ async function loadBasisInWorker() {
     // Module workers can't use importScripts(), so we fetch and eval instead
     // NOTE: Always use non-threaded version in worker
     // The threaded version tries to spawn its own workers which creates nested worker issues
-    const scriptPath = '/wasm/basis_encoder.js';
+    // Use import.meta.env.BASE_URL to handle both local dev and GitHub Pages deployment
+    const basePath = import.meta.env.BASE_URL || '/';
+    const scriptPath = `${basePath}wasm/basis_encoder.js`;
 
     try {
         // Fetch the script as text
@@ -43,7 +45,7 @@ async function loadBasisInWorker() {
             locateFile: (path, scriptDirectory) => {
                 // The WASM files are in /wasm/ directory
                 if (path.endsWith('.wasm')) {
-                    return `/wasm/${path}`;
+                    return `${basePath}wasm/${path}`;
                 }
                 return scriptDirectory + path;
             },

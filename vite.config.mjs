@@ -10,15 +10,13 @@ const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? '';
 
 export default defineConfig({
     // Locally you still get “/”, but on Actions you get “/repositoryName/”
+    // NOTE: vite makes "base" available to any script via import.meta.env.BASE_URL
     base: process.env.GITHUB_ACTIONS === 'true' ? `/${repositoryName}/` : '/',
     plugins: [
 
         tailwindcss(),
         vue(),
         vueDevTools(),
-        // NOTE: WASM files are manually copied to public/wasm-files/
-        // If updating web-demuxer version, manually copy the new wasm files:
-        // Copy-Item -Path "node_modules/web-demuxer/dist/wasm-files/*" -Destination "public/wasm-files/" -Force
     ]
 });
 

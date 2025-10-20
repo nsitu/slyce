@@ -3,12 +3,10 @@ import { threadingSupported, optimalThreadCount } from '../utils/wasm-utils.js';
 import { getBasisModule } from './load_basis.js';
 import { calculateKTX2BufferSize, getFileExtension } from '../utils/image-utils.js';
 
-// NOTE: Input images should have POT dimensions
-
-
 // NOTE:  Zstandard supercompression is disabled for simplicity 
-// If you do want to enable it you might need additional zstddec.js/wasm 
-// on the display end, hosted alongside the transcoder for KTX2Loader.
+// If you do want to enable it you would need additional zstddec.js/wasm 
+// on the display end, in addition to the transcoder already present 
+// so that the Threejs KTX2Loader would function properly.
 
 
 /**
