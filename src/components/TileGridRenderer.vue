@@ -181,8 +181,13 @@
         // Calculate grid layout based on outputMode
         const { positions, tileSize } = calculateGridLayout(tileCount);
 
-        // Load each tile
+        // Load only new tiles (ones that don't already exist)
         tileNumbers.forEach((tileNumber, index) => {
+            // Skip if tile already exists
+            if (renderer.tiles.has(tileNumber)) {
+                return;
+            }
+
             const blobURL = props.ktx2BlobURLs[tileNumber];
             const position = positions[index];
 
