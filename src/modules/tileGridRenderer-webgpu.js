@@ -276,6 +276,39 @@ export class TileGridRendererWebGPU {
     }
 
     /**
+     * Update tile position and size without reloading texture
+     * @param {string|number} tileId - Tile identifier
+     * @param {Object} position - { x, y } position in grid
+     * @param {Object} size - { width, height } of tile plane
+     */
+    updateTilePosition(tileId, position, size) {
+        const tile = this.tiles.get(tileId);
+        if (!tile) return false;
+
+        // Update mesh position
+        tile.mesh.position.set(position.x, position.y, 0);
+
+        // Update geometry if size changed
+        if (size && (tile.mesh.geometry.parameters.width !== size.width ||
+            tile.mesh.geometry.parameters.height !== size.height)) {
+            // Dispose old geometry
+            tile.mesh.geometry.dispose();
+
+            // Create new geometry with updated size
+            const geometry = new THREE.PlaneGeometry(size.width, size.height);
+            tile.mesh.geometry = geometry;
+            tile.geometry = geometry;
+        }
+
+        console.log(`[TileGridRenderer WebGPU] Tile ${tileId} position updated:`, {
+            position: { x: position.x, y: position.y },
+            size: size || 'unchanged'
+        });
+
+        return true;
+    }
+
+    /**
      * Set current layer for all tiles
      * @param {number} layer - Layer index (0 to layerCount-1)
      */

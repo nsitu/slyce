@@ -19,6 +19,9 @@
     import { TileGridRendererWebGL } from '../modules/tileGridRenderer-webgl.js';
     import { TileGridRendererWebGPU } from '../modules/tileGridRenderer-webgpu.js';
 
+    // Import grid calculator utility
+    import { calculateGridPositions } from '../utils/grid-calculator.js';
+
     // Access the Pinia store
     const app = useAppStore();
 
@@ -169,6 +172,9 @@
 
     /**
      * Load all tiles into the renderer
+     * Efficiently handles grid layout changes by:
+     * - Updating positions for existing tiles (without reloading textures)
+     * - Loading only new tiles that don't exist yet
      */
     function loadTiles() {
         if (!renderer) return;
@@ -181,16 +187,18 @@
         // Calculate grid layout based on outputMode
         const { positions, tileSize } = calculateGridLayout(tileCount);
 
-        // Load only new tiles (ones that don't already exist)
+        // Process all tiles - update positions for existing ones, load new ones
         tileNumbers.forEach((tileNumber, index) => {
-            // Skip if tile already exists
-            if (renderer.tiles.has(tileNumber)) {
-                return;
-            }
-
             const blobURL = props.ktx2BlobURLs[tileNumber];
             const position = positions[index];
 
+            // Update position if tile already exists (performance optimization)
+            if (renderer.tiles.has(tileNumber)) {
+                renderer.updateTilePosition(tileNumber, position, tileSize);
+                return;
+            }
+
+            // Load new tile
             renderer.upsertTile(tileNumber, blobURL, position, tileSize)
                 .then(() => {
                     console.log(`[TileGridRenderer.vue] Tile ${tileNumber} loaded`);
@@ -205,34 +213,27 @@
      * Calculate grid layout positions for tiles
      */
     function calculateGridLayout(tileCount) {
-        const positions = [];
         // Make tiles square (1:1 aspect ratio) to match the 256x256 texture
-        const tileSize = { width: 2, height: 2 };
-        const spacing = 0; // No gap between tiles (flush)
+        const tileSize = { width: 1, height: 1 };
 
-        if (props.outputMode === 'columns') {
-            // Grid layout (4 columns)
-            const cols = 4;
-            const rows = Math.ceil(tileCount / cols);
+        // Add small spacing between tiles to prevent overlap and improve visibility
+        // Note: With spacing=0, tiles touch edge-to-edge with no gap
+        const spacing = 0; // Small gap between tiles
 
-            for (let i = 0; i < tileCount; i++) {
-                const col = i % cols;
-                const row = Math.floor(i / cols);
+        // Determine flow direction based on output mode
+        // 'columns' mode: pixels assembled column-by-column → tiles flow left-to-right
+        // 'rows' mode: pixels assembled row-by-row → tiles flow top-to-bottom
+        const flowDirection = props.outputMode === 'columns' ? 'horizontal' : 'vertical';
 
-                positions.push({
-                    x: (col - cols / 2 + 0.5) * (tileSize.width + spacing),
-                    y: (rows / 2 - row - 0.5) * (tileSize.height + spacing)
-                });
-            }
-        } else {
-            // Column layout (stacked vertically)
-            for (let i = 0; i < tileCount; i++) {
-                positions.push({
-                    x: 0,
-                    y: (tileCount / 2 - i - 0.5) * (tileSize.height + spacing)
-                });
-            }
-        }
+        // Calculate optimal grid with positions
+        const { positions, cols, rows } = calculateGridPositions(
+            tileCount,
+            flowDirection,
+            tileSize,
+            spacing
+        );
+
+        console.log(`[TileGridRenderer.vue] Grid layout: ${cols}×${rows} for ${tileCount} tiles (${props.outputMode} mode)`);
 
         return { positions, tileSize };
     }
