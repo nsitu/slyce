@@ -142,7 +142,8 @@ const processVideo = async (settings) => {
                     outputMode,
                     crossSectionCount,
                     crossSectionType,
-                    frameCount: app.frameCount,
+                    // Base wavelength on frames we actually process (up to lastTileEnd)
+                    frameCount: framesUsed,
                     outputFormat: app.outputFormat  // Pass output format to TileBuilder
                 });
 

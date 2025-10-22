@@ -203,7 +203,10 @@ export class TileBuilder extends EventEmitter {
                 const distributionRange = samplingMode === 'rows' ? fileInfo.height : fileInfo.width;
 
                 // Calculate sample location using sine function
-                const sampleLocation = A * Math.sin(B * drawLocation + C) + D;
+                // Use a continuous global frame index so phase doesn't reset per tile
+                // frameCount is the total number of frames we actually process (framesUsed)
+                const globalIndex = Math.min(frameNumber, frameCount) - 1; // zero-based
+                const sampleLocation = A * Math.sin(B * globalIndex + C) + D;
 
                 // Clamp sampleLocation to be within video bounds
                 const clampedSampleLocation = Math.max(0, Math.min(distributionRange - 1, sampleLocation));
