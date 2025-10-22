@@ -363,6 +363,25 @@ export class KTX2Assembler {
         const layerCount = encodedLayers.length;
         console.log(`[Sequential] All ${layerCount} layers encoded. Assembling array texture...`);
 
+        // Force array texture when only a single layer was produced by duplicating the encoded bytes.
+        // Rationale: three.js KTX2Loader returns a non-array texture when layerCount === 1,
+        // which breaks array-based sampling (sampler2DArray) in viewers. Duplicating the already-encoded
+        // layer avoids re-encoding and ensures layerCount > 1 so loaders produce an array texture.
+        if (encodedLayers.length === 1) {
+            console.warn('[KTX2] Single layer detected — duplicating layer to force array texture (three.js compatibility).');
+            const layer = encodedLayers[0];
+            const duplicate = {
+                levels: layer.levels.map(l => ({
+                    levelData: l.levelData, // reuse same bytes (no copy)
+                    uncompressedByteLength: l.uncompressedByteLength
+                })),
+                format: layer.format,
+                width: layer.width,
+                height: layer.height
+            };
+            encodedLayers.push(duplicate);
+        }
+
         // Assemble combined mip levels and create container
         const combinedLevels = this._assembleMipLevels(encodedLayers, baseParams);
         const arrayContainer = this._createArrayContainer(encodedLayers, baseParams, combinedLevels);
@@ -372,7 +391,7 @@ export class KTX2Assembler {
 
         const endTime = performance.now();
         const duration = (endTime - startTime).toFixed(2);
-        console.log(`[Sequential Array Encoder] Complete: ${finalBuffer.byteLength} bytes, ${layerCount} layers, ${combinedLevels.length} mips, ${duration}ms`);
+        console.log(`[Sequential Array Encoder] Complete: ${finalBuffer.byteLength} bytes, ${encodedLayers.length} layers, ${combinedLevels.length} mips, ${duration}ms`);
 
         return finalBuffer;
     }
@@ -437,6 +456,22 @@ export class KTX2Assembler {
 
                 // Help GC reclaim memory
                 container.levels = null;
+            }
+
+            // Force array texture when only a single layer was produced by duplicating the encoded bytes.
+            if (encodedLayers.length === 1) {
+                console.warn('[KTX2] Single layer detected — duplicating layer to force array texture (three.js compatibility).');
+                const layer = encodedLayers[0];
+                const duplicate = {
+                    levels: layer.levels.map(l => ({
+                        levelData: l.levelData,
+                        uncompressedByteLength: l.uncompressedByteLength
+                    })),
+                    format: layer.format,
+                    width: layer.width,
+                    height: layer.height
+                };
+                encodedLayers.push(duplicate);
             }
 
             // Assemble combined mip levels and create container
@@ -518,6 +553,22 @@ export class KTX2Assembler {
 
             // Help GC reclaim memory
             container.levels = null;
+        }
+
+        // Force array texture when only a single layer was produced by duplicating the encoded bytes.
+        if (encodedLayers.length === 1) {
+            console.warn('[KTX2] Single layer detected — duplicating layer to force array texture (three.js compatibility).');
+            const layer = encodedLayers[0];
+            const duplicate = {
+                levels: layer.levels.map(l => ({
+                    levelData: l.levelData,
+                    uncompressedByteLength: l.uncompressedByteLength
+                })),
+                format: layer.format,
+                width: layer.width,
+                height: layer.height
+            };
+            encodedLayers.push(duplicate);
         }
 
         // Assemble combined mip levels and create container
