@@ -304,6 +304,12 @@
                     <Select
                         v-model="app.potResolution"
                         :options="[{
+                            name: '32px',
+                            value: 32
+                        }, {
+                            name: '64px',
+                            value: 64
+                        }, {
                             name: '128px',
                             value: 128
                         }, {

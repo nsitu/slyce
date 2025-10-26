@@ -80,6 +80,7 @@ export class TileGridRendererWebGL {
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         this.renderer.setSize(width, height);
         this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // Linear workflow to match WebGPU
         container.appendChild(this.renderer.domElement);
 
         console.log('[TileGridRenderer] Renderer canvas size:', {
@@ -211,9 +212,9 @@ export class TileGridRendererWebGL {
                 blobURL,
                 (texture) => {
                     // Configure texture
-                    // Note: flipY doesn't work for array textures, we flip in the shader instead
                     texture.flipY = false;
                     texture.generateMipmaps = false;
+                    texture.colorSpace = THREE.LinearSRGBColorSpace; // Linear workflow to match WebGPU
                     const hasMips = Array.isArray(texture.mipmaps) && texture.mipmaps.length > 1;
                     texture.minFilter = hasMips ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
                     texture.magFilter = THREE.LinearFilter;

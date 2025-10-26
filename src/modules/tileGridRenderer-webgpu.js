@@ -87,6 +87,7 @@ export class TileGridRendererWebGPU {
         this.renderer = new THREE.WebGPURenderer({ antialias: true, alpha: false });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(width, height);
+        this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // Changed from SRGBColorSpace
 
         // Wait for WebGPU backend to initialize
         await this.renderer.init();
@@ -206,6 +207,7 @@ export class TileGridRendererWebGPU {
                     // Note: flipY doesn't work for array textures, we flip in the shader instead
                     arrayTexture.flipY = false;
                     arrayTexture.generateMipmaps = false;
+                    arrayTexture.colorSpace = THREE.LinearSRGBColorSpace; // Linear workflow to match WebGL
                     const hasMips = Array.isArray(arrayTexture.mipmaps) && arrayTexture.mipmaps.length > 1;
                     arrayTexture.minFilter = hasMips ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
                     arrayTexture.magFilter = THREE.LinearFilter;
