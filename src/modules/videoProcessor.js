@@ -46,16 +46,21 @@ const processVideo = async (settings) => {
     // Calculate how many frames will actually be used vs skipped
     const lastTileEnd = tilePlan.tiles[tilePlan.tiles.length - 1].end;
     const framesUsed = lastTileEnd;
-    const framesSkipped = app.frameCount - framesUsed;
+    const effectiveFrameCount = app.framesToSample > 0 ? Math.min(app.framesToSample, app.frameCount) : app.frameCount;
+    const framesSkippedByTiling = effectiveFrameCount - framesUsed;
+    const framesSkippedByLimit = app.frameCount - effectiveFrameCount;
 
     // Log upfront information about the processing plan
-    if (framesSkipped > 0) {
+    if (framesSkippedByLimit > 0) {
+        app.log(`Frame limit set to ${effectiveFrameCount} of ${app.frameCount} total frames.`);
+    }
+    if (framesSkippedByTiling > 0) {
         const skippedStart = lastTileEnd + 1;
-        const skippedEnd = app.frameCount;
+        const skippedEnd = effectiveFrameCount;
         app.log(`Processing ${tilePlan.tiles.length} tile(s) using frames 1-${lastTileEnd}.`);
-        app.log(`Frames ${skippedStart}-${skippedEnd} (${framesSkipped} frames) will be skipped.`)
+        app.log(`Frames ${skippedStart}-${skippedEnd} (${framesSkippedByTiling} frames) will be skipped due to tiling.`);
     } else {
-        app.log(`Processing ${tilePlan.tiles.length} tile(s) using all ${app.frameCount} frames.`);
+        app.log(`Processing ${tilePlan.tiles.length} tile(s) using all ${framesUsed} frames.`);
     }
 
     // Create mediabunny input and video sample sink
