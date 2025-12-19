@@ -14,7 +14,7 @@ loadMaterialSymbols([
     'step_over', 'close_fullscreen', 'open_in_full', 'warning',
     'video_file', 'frame_source', 'barcode', 'timer', 'speed',
     'calculate', 'view_compact', 'rotate_right', 'equalizer',
-    'arrow_range', 'double_arrow'
+    'arrow_range', 'double_arrow', 'filter_alt'
 ])
 // Note: we could also import the entire set, but the bundle is too big.
 // import 'material-symbols/outlined.css';
@@ -42,12 +42,6 @@ import { loadBasisModule } from './modules/load_basis.js';
 import { useAppStore } from './stores/appStore.js';
 import { chooseRenderer } from './utils/renderer-utils.js';
 
-// Import KTX2 worker test
-import { testKTX2Worker } from './utils/ktx2-worker-test.js';
-
-// Expose test function to console for debugging
-window.testKTX2Worker = testKTX2Worker;
-console.log('[Main] To test KTX2 encoding in Web Worker, run: testKTX2Worker()');
 
 // Initialize app
 (async () => {
