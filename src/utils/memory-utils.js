@@ -222,12 +222,6 @@ async function runMemoryDiagnostics() {
 }
 
 export {
-    getMemoryInfo,
-    logMemoryInfo,
-    isPrivateBrowsingMode,
     estimateAvailableMemory,
-    getMemoryConstraints,
-    testMemoryAllocation,
-    findMaxAllocatableMemory,
-    runMemoryDiagnostics
+    getMemoryConstraints
 };
