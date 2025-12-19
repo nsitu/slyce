@@ -10,13 +10,13 @@ export async function downloadAllAsZip(blobURLs, fileInfo, format) {
     const zip = new JSZip();
     const filename = fileInfo?.name?.replace(/\.[^/.]+$/, '') || 'video';
 
-    // Add each blob to the zip
+    // Add each blob to the zip with simple numeric names
     for (const [tileNumber, blobUrl] of Object.entries(blobURLs)) {
         try {
             const response = await fetch(blobUrl);
             const blob = await response.blob();
             zip.file(
-                `${filename}_tile_${tileNumber}.${format.extension}`,
+                `${tileNumber}.${format.extension}`,
                 blob,
                 { binary: true }
             );
