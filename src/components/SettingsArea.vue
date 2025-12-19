@@ -11,8 +11,6 @@
     import { processVideo } from '../modules/videoProcessor';
 
     import Tile from './Tile.vue';
-    // import SkipMessage from './SkipMessage.vue';
-    // import ScaleMessage from './ScaleMessage.vue'; 
     import ExplanatoryMessages from './ExplanatoryMessages.vue';
 
 
@@ -21,7 +19,6 @@
 
     import FileInfo from './FileInfo.vue';
     import Select from 'primevue/select';
-    import InputText from 'primevue/inputtext';
     import InputNumber from 'primevue/inputnumber';
 
 
@@ -37,6 +34,13 @@
             if (app.samplingMode == 'rows') {
                 app.samplePixelCount = app.fileInfo?.width
             }
+        }
+    });
+
+    // Sync framesToSample with frameCount when frameCount changes (new video loaded)
+    watch(() => app.frameCount, (newFrameCount) => {
+        if (newFrameCount > 0) {
+            app.framesToSample = newFrameCount;
         }
     });
 
@@ -165,7 +169,7 @@
 
             <div class="flex gap-2 justify-start items-center">
 
-                <span>From each frame, sample</span>
+                <span>Sample</span>
                 <InputNumber
                     v-model="app.crossSectionCount"
                     placeholder="60"
@@ -183,13 +187,21 @@
                     v-if="app.fileInfo?.width && app.samplingMode == 'rows'"
                     class="sample-pixel-count"
                 >
-                    {{ app.fileInfo.width }} pixels</span>
+                    {{ app.fileInfo.width }}px</span>
                 <span
                     v-if="app.fileInfo?.height && app.samplingMode == 'columns'"
                     class="sample-pixel-count"
                 >
-                    {{ app.fileInfo.height }} pixels</span>
-
+                    {{ app.fileInfo.height }}px</span>
+                <span>from</span>
+                <InputNumber
+                    v-model="app.framesToSample"
+                    :min="1"
+                    :max="app.frameCount"
+                    :disabled="!app.frameCount"
+                    class="frames-input"
+                ></InputNumber>
+                <span>frames</span>
             </div>
 
 
@@ -404,20 +416,47 @@
         display: grid;
         gap: 0.5rem;
         grid-template-columns: 1fr 1fr 1fr 1fr;
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 0.5rem;
     }
 
     /* Multi-column newspaper-style layout that flows top-to-bottom, then left-to-right */
     .tile-container-rows {
         column-count: 4;
         column-gap: 0.5rem;
-        max-height: 80vh;
-        /* Adjust based on your needs */
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 0.5rem;
     }
 
     /* Prevent tiles from breaking across columns */
     .tile-container-rows>* {
         break-inside: avoid;
         margin-bottom: 0.5rem;
+    }
+
+    /* Custom scrollbar styling for better visibility */
+    .tile-container-columns::-webkit-scrollbar,
+    .tile-container-rows::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .tile-container-columns::-webkit-scrollbar-track,
+    .tile-container-rows::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .tile-container-columns::-webkit-scrollbar-thumb,
+    .tile-container-rows::-webkit-scrollbar-thumb {
+        background: #10b981;
+        border-radius: 4px;
+    }
+
+    .tile-container-columns::-webkit-scrollbar-thumb:hover,
+    .tile-container-rows::-webkit-scrollbar-thumb:hover {
+        background: #059669;
     }
 
 
@@ -461,5 +500,9 @@
 
     :deep(.p-inputnumber-input) {
         width: 4rem;
+    }
+
+    :deep(.frames-input .p-inputnumber-input) {
+        width: 6rem;
     }
 </style>
