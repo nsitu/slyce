@@ -35,6 +35,9 @@ export function useTilePlan() {
             return plan;
         }
 
+        // Use the user-limited frame count (framesToSample) if set, otherwise use full frameCount
+        const effectiveFrameCount = app.framesToSample > 0 ? Math.min(app.framesToSample, app.frameCount) : app.frameCount;
+
         // Determine rotation based on samplingMode and outputMode
         if (app.samplingMode !== app.outputMode) {
             plan.rotate = 90;
@@ -64,7 +67,7 @@ export function useTilePlan() {
             if (app.samplingMode === 'rows') {
                 if (app.outputMode === 'rows') {
                     framesPerTile = Math.floor(spatialSide / aspectRatio);
-                    maxQualityTiles = Math.floor(app.frameCount / framesPerTile);
+                    maxQualityTiles = Math.floor(effectiveFrameCount / framesPerTile);
                     // Sampling rows, outputting rows
                     if (app.prioritize === 'quality') {
                         // Prioritize quality
@@ -76,7 +79,7 @@ export function useTilePlan() {
                         // Prioritize quantity 
                         plan.length = maxQualityTiles + 1;
                         // Recalculate framesPerTile
-                        framesPerTile = Math.floor(app.frameCount / plan.length);
+                        framesPerTile = Math.floor(effectiveFrameCount / plan.length);
                         plan.height = framesPerTile; // Temporal side
                         plan.width = Math.floor(plan.height * aspectRatio); // Spatial side 
                         plan.isScaled = true;
@@ -88,13 +91,13 @@ export function useTilePlan() {
                         plan.width = app.potResolution; // Spatial side (POT)
                         plan.height = Math.floor(app.potResolution / aspectRatio); // Temporal side
                         framesPerTile = plan.height;
-                        plan.length = Math.floor(app.frameCount / framesPerTile);
+                        plan.length = Math.floor(effectiveFrameCount / framesPerTile);
                         plan.scaleFrom = spatialSide;
                         plan.scaleTo = app.potResolution;
                     }
                 } else if (app.outputMode === 'columns') {
                     framesPerTile = Math.floor(spatialSide * aspectRatio);
-                    maxQualityTiles = Math.floor(app.frameCount / framesPerTile);
+                    maxQualityTiles = Math.floor(effectiveFrameCount / framesPerTile);
 
                     // Sampling rows, outputting columns (rotation)
                     if (app.prioritize === 'quality') {
@@ -107,7 +110,7 @@ export function useTilePlan() {
                         // Prioritize quantity
                         plan.length = maxQualityTiles + 1;
                         // Recalculate framesPerTile
-                        framesPerTile = Math.floor(app.frameCount / plan.length);
+                        framesPerTile = Math.floor(effectiveFrameCount / plan.length);
                         plan.width = framesPerTile; // Temporal side
                         // plan.height = Math.floor(plan.width * aspectRatio); // Spatial side 
                         plan.height = Math.floor(plan.width / aspectRatio); // Spatial side 
@@ -120,7 +123,7 @@ export function useTilePlan() {
                         plan.height = app.potResolution; // Spatial side (POT)
                         plan.width = Math.floor(app.potResolution * aspectRatio); // Temporal side
                         framesPerTile = plan.width;
-                        plan.length = Math.floor(app.frameCount / framesPerTile);
+                        plan.length = Math.floor(effectiveFrameCount / framesPerTile);
                         plan.scaleFrom = spatialSide;
                         plan.scaleTo = app.potResolution;
                     }
@@ -131,7 +134,7 @@ export function useTilePlan() {
                     // in some cases I had to revert back to the original aspect ratio 
                     // in order to get the desired behaviour 
                     framesPerTile = Math.floor(spatialSide / aspectRatio);
-                    maxQualityTiles = Math.floor(app.frameCount / framesPerTile);
+                    maxQualityTiles = Math.floor(effectiveFrameCount / framesPerTile);
                     // Sampling columns, outputting rows (rotation)
                     if (app.prioritize === 'quality') {
                         // Prioritize quality
@@ -143,7 +146,7 @@ export function useTilePlan() {
                         // Prioritize quantity
                         plan.length = maxQualityTiles + 1;
                         // Recalculate framesPerTile
-                        framesPerTile = Math.floor(app.frameCount / plan.length);
+                        framesPerTile = Math.floor(effectiveFrameCount / plan.length);
                         plan.height = framesPerTile; // Temporal side
                         plan.width = Math.floor(plan.height * aspectRatio); // Spatial side   
                         plan.isScaled = true;
@@ -155,13 +158,13 @@ export function useTilePlan() {
                         plan.width = app.potResolution; // Spatial side (POT)
                         plan.height = Math.floor(app.potResolution / aspectRatio); // Temporal side
                         framesPerTile = plan.height;
-                        plan.length = Math.floor(app.frameCount / framesPerTile);
+                        plan.length = Math.floor(effectiveFrameCount / framesPerTile);
                         plan.scaleFrom = spatialSide;
                         plan.scaleTo = app.potResolution;
                     }
                 } else if (app.outputMode === 'columns') {
                     framesPerTile = Math.floor(spatialSide * aspectRatio);
-                    maxQualityTiles = Math.floor(app.frameCount / framesPerTile);
+                    maxQualityTiles = Math.floor(effectiveFrameCount / framesPerTile);
                     // Sampling columns, outputting columns
                     if (app.prioritize === 'quality') {
                         // Prioritize quality
@@ -173,7 +176,7 @@ export function useTilePlan() {
                         // Prioritize quantity
                         plan.length = maxQualityTiles + 1;
                         // Recalculate framesPerTile
-                        framesPerTile = Math.floor(app.frameCount / plan.length);
+                        framesPerTile = Math.floor(effectiveFrameCount / plan.length);
                         plan.width = framesPerTile; // Temporal side
                         plan.height = Math.floor(plan.width / aspectRatio); // Spatial side 
                         plan.isScaled = true;
@@ -185,7 +188,7 @@ export function useTilePlan() {
                         plan.height = app.potResolution; // Spatial side (POT)
                         plan.width = Math.floor(app.potResolution * aspectRatio); // Temporal side
                         framesPerTile = plan.width;
-                        plan.length = Math.floor(app.frameCount / framesPerTile);
+                        plan.length = Math.floor(effectiveFrameCount / framesPerTile);
                         plan.scaleFrom = spatialSide;
                         plan.scaleTo = app.potResolution;
                     }
@@ -207,11 +210,11 @@ export function useTilePlan() {
                 // Ensure framesPerTile and plan.length are valid
                 if (framesPerTile < 1 || plan.length < 1) {
                     const framesNeeded = framesPerTile || 1;
-                    const framesShort = framesNeeded - app.frameCount;
+                    const framesShort = framesNeeded - effectiveFrameCount;
                     plan.notices.push(
-                        `Not enough frames to create tiles with the current settings. Each tile requires ${framesNeeded} frames, but only ${app.frameCount} frames are available. You are short by ${framesShort} frames.`
+                        `Not enough frames to create tiles with the current settings. Each tile requires ${framesNeeded} frames, but only ${effectiveFrameCount} frames are available. You are short by ${framesShort} frames.`
                     );
-                    plan.skipping = app.frameCount; // All frames are skipped
+                    plan.skipping = effectiveFrameCount; // All frames are skipped
                     return plan;
                 }
 
@@ -221,17 +224,17 @@ export function useTilePlan() {
 
                 if (framesPerTile < 1 || plan.length < 1) {
                     const framesNeeded = framesPerTile || 1;
-                    const framesShort = framesNeeded - app.frameCount;
+                    const framesShort = framesNeeded - effectiveFrameCount;
                     plan.notices.push(
-                        `Not enough frames to create a single tile with the current settings. Each tile requires ${framesNeeded} frames, but only ${app.frameCount} frames are available. You are short by ${framesShort} frames.`
+                        `Not enough frames to create a single tile with the current settings. Each tile requires ${framesNeeded} frames, but only ${effectiveFrameCount} frames are available. You are short by ${framesShort} frames.`
                     );
-                    plan.skipping = app.frameCount; // All frames are skipped
+                    plan.skipping = effectiveFrameCount; // All frames are skipped
                     return plan;
                 }
 
                 // Calculate skipped frames
                 const usedFrames = plan.length * framesPerTile;
-                plan.skipping = app.frameCount - usedFrames;
+                plan.skipping = effectiveFrameCount - usedFrames;
             }
         } else if (app.tileMode === 'full') {
             // Full tile mode: one tile covering all frames
@@ -239,25 +242,25 @@ export function useTilePlan() {
             plan.isScaled = false;
             plan.scaleFrom = spatialSide;
             plan.scaleTo = spatialSide;
-            plan.tiles = [{ start: 1, end: app.frameCount }];
+            plan.tiles = [{ start: 1, end: effectiveFrameCount }];
             plan.skipping = 0;
 
             // Determine tile dimensions based on samplingMode and outputMode
             if (app.samplingMode === 'rows') {
                 if (app.outputMode === 'rows') {
                     plan.width = spatialSide; // Spatial side
-                    plan.height = app.frameCount; // Temporal side
+                    plan.height = effectiveFrameCount; // Temporal side
                 } else if (app.outputMode === 'columns') {
                     plan.height = spatialSide; // Spatial side
-                    plan.width = app.frameCount; // Temporal side
+                    plan.width = effectiveFrameCount; // Temporal side
                 }
             } else if (app.samplingMode === 'columns') {
                 if (app.outputMode === 'rows') {
                     plan.width = spatialSide; // Spatial side
-                    plan.height = app.frameCount; // Temporal side
+                    plan.height = effectiveFrameCount; // Temporal side
                 } else if (app.outputMode === 'columns') {
                     plan.height = spatialSide; // Spatial side
-                    plan.width = app.frameCount; // Temporal side
+                    plan.width = effectiveFrameCount; // Temporal side
                 }
             }
         } else {
