@@ -19,7 +19,7 @@
 <template>
 
     <Panel
-        v-if="plan.rotate !== 0 || plan.skipping || plan.isScaled || plan.notices"
+        v-if="plan.rotate !== 0 || plan.skipping || plan.isScaled || plan.notices || (app.framesToSample > 0 && app.framesToSample < app.frameCount)"
         style="background: #eee;"
         class="w-full"
     >
@@ -47,6 +47,28 @@
                 <AccordionContent>
                     <p class="m-0 text-left	">
                         Sampled {{ app.samplingMode }} will be joined as {{ app.outputMode }}.
+                    </p>
+                </AccordionContent>
+            </AccordionPanel>
+            <AccordionPanel
+                value="0.5"
+                v-if="app.framesToSample > 0 && app.framesToSample < app.frameCount"
+            >
+                <AccordionHeader>
+                    <div class="flex items-center gap-1 cursor-default">
+                        <span class="material-symbols-outlined">filter_alt</span>
+                        <span>Limiting to</span>
+                        <span>{{ app.framesToSample.toLocaleString() }} of {{ app.frameCount.toLocaleString() }}
+                            frames</span>
+                    </div>
+                </AccordionHeader>
+                <AccordionContent>
+                    <p class="m-0 text-left">
+                        Sampling is limited to the first {{ app.framesToSample.toLocaleString() }} frames.
+                        The remaining {{ (app.frameCount - app.framesToSample).toLocaleString() }} frames
+                        ({{ Math.round((app.frameCount - app.framesToSample) / app.frameCount * 100) }}% of the video)
+                        will not
+                        be processed.
                     </p>
                 </AccordionContent>
             </AccordionPanel>
