@@ -5,6 +5,7 @@ export const useAppStore = defineStore('appStore', {
     state: () => ({
         config: {},
         frameCount: 0,
+        framesToSample: 0, // User-adjustable limit; defaults to frameCount
         frameNumber: 0,
         crossSectionCount: 30,
         crossSectionType: 'waves', // planes, waves
