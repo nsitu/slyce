@@ -10,9 +10,7 @@ const getMetaData = async () => {
     app.set('fileInfo', null)
 
     try {
-        app.log(`Loading Video File`)
-        app.log(`Extracting Stream Info`)
-        app.log(`Configuring Video Decoder`)
+        app.setStatus('Video Setup', 'Loading video file...');
 
         // Create mediabunny input from file blob
         const input = new Input({
@@ -20,8 +18,12 @@ const getMetaData = async () => {
             source: new BlobSource(app.file),
         });
 
+        app.setStatus('Video Setup', 'Extracting stream info...');
+
         // Get primary video track
         const videoTrack = await input.getPrimaryVideoTrack();
+
+        app.setStatus('Video Setup', 'Configuring video decoder...');
 
         // Get decoder configuration
         const config = await videoTrack.getDecoderConfig();
@@ -53,8 +55,12 @@ const getMetaData = async () => {
         });
         app.set('config', config);
 
+        // Remove the setup status now that we're done
+        app.removeStatus('Video Setup');
+
     } catch (error) {
         console.error('Failed to get file meta data:', error);
+        app.setStatus('Video Setup', `Error: ${error.message}`);
     }
 }
 

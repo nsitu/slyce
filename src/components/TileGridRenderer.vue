@@ -3,11 +3,51 @@
     <div
         ref="containerRef"
         class="tile-grid-renderer"
+        :class="{ 'is-fullscreen': isFullscreen }"
     >
         <div
             v-if="!isInitialized"
             class="loading-message"
         >Initializing renderer...</div>
+
+        <!-- Fullscreen toggle button -->
+        <button
+            v-if="isInitialized"
+            class="fullscreen-button"
+            @click="toggleFullscreen"
+            :title="isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
+        >
+            <svg
+                v-if="!isFullscreen"
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <path
+                    d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+            </svg>
+            <svg
+                v-else
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <path
+                    d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+            </svg>
+        </button>
     </div>
 </template>
 
@@ -50,6 +90,9 @@
     let renderer = null;
     const isInitialized = ref(false);
     let initializationAttempted = ref(false);
+
+    // Fullscreen state
+    const isFullscreen = ref(false);
 
     /**
      * Initialize renderer - called lazily when tiles are available and container is visible
@@ -94,7 +137,7 @@
             console.log('[TileGridRenderer.vue] Initialized successfully');
         } catch (error) {
             console.error('[TileGridRenderer.vue] Initialization failed:', error);
-            app.log(`Failed to initialize KTX2 renderer: ${error.message}`);
+            app.setStatus('Renderer Error', `Failed to initialize KTX2 renderer: ${error.message}`);
             initializationAttempted.value = false; // Allow retry
         }
     }
@@ -103,10 +146,44 @@
     // Store observer reference for cleanup
     let intersectionObserver = null;
 
+    /**
+     * Toggle fullscreen mode for the renderer container
+     */
+    function toggleFullscreen() {
+        if (!containerRef.value) return;
+
+        if (!document.fullscreenElement) {
+            containerRef.value.requestFullscreen().catch(err => {
+                console.error('[TileGridRenderer.vue] Fullscreen request failed:', err);
+                app.setStatus('Fullscreen Error', err.message);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    /**
+     * Handle fullscreen change events
+     */
+    function handleFullscreenChange() {
+        isFullscreen.value = !!document.fullscreenElement;
+
+        // Resize renderer when entering/exiting fullscreen
+        if (renderer) {
+            // Give the browser a moment to update dimensions
+            setTimeout(() => {
+                renderer.resize();
+            }, 100);
+        }
+    }
+
     // Mount: Just set up the container ref, don't initialize yet
     onMounted(async () => {
         await nextTick();
         console.log('[TileGridRenderer.vue] Component mounted, waiting for tiles...');
+
+        // Listen for fullscreen changes
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
 
         // Also watch for when container becomes visible (e.g., tab switch)
         if (containerRef.value) {
@@ -128,6 +205,14 @@
 
     // Cleanup on unmount - must be registered synchronously before any async operations
     onBeforeUnmount(() => {
+        // Clean up fullscreen listener
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+
+        // Exit fullscreen if active
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        }
+
         // Clean up intersection observer
         if (intersectionObserver) {
             intersectionObserver.disconnect();
@@ -156,6 +241,9 @@
                 // Already initialized, just reload tiles
                 loadTiles();
             }
+        } else if (isInitialized.value && renderer) {
+            // No tiles - clear the renderer (e.g., after reset)
+            renderer.clearAllTiles();
         }
     }, { deep: true, immediate: true });
 
@@ -263,6 +351,13 @@
         overflow: hidden;
     }
 
+    .tile-grid-renderer.is-fullscreen {
+        min-width: unset;
+        height: 100vh;
+        width: 100vw;
+        border-radius: 0;
+    }
+
     .loading-message {
         position: absolute;
         top: 50%;
@@ -271,6 +366,33 @@
         color: #888;
         font-size: 14px;
         z-index: 10;
+    }
+
+    .fullscreen-button {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 20;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        padding: 8px;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.8);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .fullscreen-button:hover {
+        background: rgba(0, 0, 0, 0.8);
+        border-color: rgba(255, 255, 255, 0.4);
+        color: #fff;
+    }
+
+    .fullscreen-button:active {
+        transform: scale(0.95);
     }
 
     .tile-grid-renderer :deep(canvas) {

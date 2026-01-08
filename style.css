@@ -9,8 +9,11 @@ body {
     box-sizing: border-box;
 }
 
-body.hover {
-    background-color: #e0f2d1;
+/* Highlight the upload area when dragging files over the page */
+body.hover .upload-area {
+    border-color: #22c55e;
+    background-color: #dcfce7;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
 }
 
 canvas {

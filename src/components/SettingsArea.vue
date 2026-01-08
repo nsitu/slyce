@@ -14,25 +14,33 @@
     import ExplanatoryMessages from './ExplanatoryMessages.vue';
 
 
-    // when a file is uploaded get the metadata
-    watch(() => app.file, () => getMetaData())
+    // when a file is uploaded get the metadata (skip if file is null/undefined)
+    watch(() => app.file, (newFile) => {
+        if (newFile) {
+            getMetaData();
+        }
+    })
 
     import FileInfo from './FileInfo.vue';
     import Select from 'primevue/select';
     import InputNumber from 'primevue/inputnumber';
 
-
+    import InputGroup from 'primevue/inputgroup';
+    import InputGroupAddon from 'primevue/inputgroupaddon';
 
 
 
     // Watch for changes in samplingMode and adjust samplePixelCount accordingly
     watchEffect(() => {
-        if (app.fileInfo?.height && app.fileInfo?.width) {
-            if (app.samplingMode == 'columns') {
-                app.samplePixelCount = app.fileInfo?.height
+        const width = app.cropMode && app.cropWidth ? app.cropWidth : app.fileInfo?.width;
+        const height = app.cropMode && app.cropHeight ? app.cropHeight : app.fileInfo?.height;
+
+        if (height && width) {
+            if (app.samplingMode === 'columns') {
+                app.samplePixelCount = height;
             }
-            if (app.samplingMode == 'rows') {
-                app.samplePixelCount = app.fileInfo?.width
+            if (app.samplingMode === 'rows') {
+                app.samplePixelCount = width;
             }
         }
     });
@@ -44,9 +52,44 @@
         }
     });
 
+    // Reset crop to full frame when video changes
+    watch(() => app.fileInfo, (newFileInfo) => {
+        if (newFileInfo?.width && newFileInfo?.height) {
+            app.cropWidth = newFileInfo.width;
+            app.cropHeight = newFileInfo.height;
+            app.cropX = 0;
+            app.cropY = 0;
+        }
+    }, { immediate: true });
 
+    // Initialize crop dimensions when cropMode is enabled and they're not set
+    watch(() => app.cropMode, (isCropMode) => {
+        if (isCropMode && app.fileInfo?.width && app.fileInfo?.height) {
+            // Initialize with full dimensions if not already set
+            if (!app.cropWidth) app.cropWidth = app.fileInfo.width;
+            if (!app.cropHeight) app.cropHeight = app.fileInfo.height;
+        }
+    });
+
+    // Determine if video displays as portrait (height > width after rotation)
+    const isPortraitVideo = computed(() => {
+        if (!app.fileInfo?.width || !app.fileInfo?.height) return false;
+        // Normalize rotation to 0-359 range (handles negative values like -90)
+        const rotation = ((app.fileInfo.rotation || 0) % 360 + 360) % 360;
+        const isRotated90or270 = rotation === 90 || rotation === 270;
+        // After rotation, dimensions are swapped
+        const effectiveWidth = isRotated90or270 ? app.fileInfo.height : app.fileInfo.width;
+        const effectiveHeight = isRotated90or270 ? app.fileInfo.width : app.fileInfo.height;
+        return effectiveHeight > effectiveWidth;
+    });
 
     import RadioButton from 'primevue/radiobutton';
+    import ProgressSpinner from 'primevue/progressspinner';
+
+    // Loading state - show spinner until metadata is ready
+    const isLoading = computed(() => {
+        return app.file && !app.fileInfo?.name;
+    });
 
 
 
@@ -56,21 +99,131 @@
 
 </script>
 <template>
-
-    <div class="flex  items-start gap-5">
-        <FileInfo v-if="app.file"></FileInfo>
+    <!-- Loading state -->
+    <div
+        v-if="isLoading"
+        class="settings-placeholder"
+    >
+        <ProgressSpinner
+            style="width: 50px; height: 50px"
+            strokeWidth="4"
+        />
+    </div>
+    <!-- Settings content -->
+    <div
+        v-else-if="app.file"
+        class="three-column-layout flex  items-start gap-5"
+    >
+        <FileInfo :class="isPortraitVideo ? 'file-info-narrow' : 'file-info-wide'"></FileInfo>
 
         <div
             id="settings"
-            class="flex flex-col gap-3 items-start"
+            class="settings-column flex flex-col gap-3 items-start"
         >
             <h3 class="text-xl">Sampling</h3>
 
 
-            <div class="flex w-full gap-6">
+            <div class="flex w-full segmented-control">
                 <label
-                    style="max-width: 15rem;"
-                    class="flex flex-col grow items-start gap-2"
+                    class="flex flex-col grow items-start gap-2 segment-left"
+                    for="fullFrame"
+                    :class="(!app.cropMode) ? 'activeLabel' : ''"
+                >
+                    <div class="flex items-center gap-2 w-full">
+                        <RadioButton
+                            v-model="app.cropMode"
+                            inputId="fullFrame"
+                            name="cropMode"
+                            :value="false"
+                        />
+                        <span>Entire Video Frame</span>
+
+                    </div>
+                    <small>Sample the full dimensions of the original video</small>
+                </label>
+                <label
+                    class="flex flex-col grow items-start gap-2 segment-right"
+                    for="regionOfInterest"
+                    :class="(app.cropMode) ? 'activeLabel' : ''"
+                >
+                    <div class="flex items-center gap-2 w-full">
+                        <RadioButton
+                            v-model="app.cropMode"
+                            inputId="regionOfInterest"
+                            name="cropMode"
+                            :value="true"
+                        />
+                        <span>Region of Interest</span>
+
+                    </div>
+                    <small>Sample a cropped rectangular area</small>
+                </label>
+            </div>
+
+
+            <div
+                v-if="app.cropMode"
+                class="flex gap-2 justify-start items-center"
+            >
+                <span class="whitespace-pre">Crop to</span>
+                <InputNumber
+                    v-model="app.cropWidth"
+                    :min="1"
+                    :max="app.fileInfo?.width"
+                    :disabled="!app.fileInfo?.width"
+                    class="crop-input"
+                />
+                <span>×</span>
+                <InputNumber
+                    v-model="app.cropHeight"
+                    :min="1"
+                    :max="app.fileInfo?.height"
+                    :disabled="!app.fileInfo?.height"
+                    class="crop-input"
+                />
+                <span class="whitespace-pre">at offset</span>
+                <InputGroup
+                    :class="{ 'disabled-group': app.cropWidth >= app.fileInfo?.width }"
+                    class="display: inline-flex;
+    position: relative;
+    width: auto;"
+                >
+                    <InputGroupAddon>x</InputGroupAddon>
+                    <InputNumber
+                        v-model="app.cropX"
+                        :min="0"
+                        :max="Math.max(0, (app.fileInfo?.width || 0) - (app.cropWidth || 0))"
+                        :disabled="!app.fileInfo?.width || app.cropWidth >= app.fileInfo?.width"
+                        class="crop-input"
+                    />
+
+                </InputGroup>
+
+
+
+
+                <span> and</span>
+
+                <InputGroup
+                    :class="{ 'disabled-group': app.cropHeight >= app.fileInfo?.height }"
+                    class="display: inline-flex;
+    position: relative;
+    width: auto;"
+                >
+                    <InputGroupAddon>y</InputGroupAddon>
+                    <InputNumber
+                        v-model="app.cropY"
+                        :min="0"
+                        :max="Math.max(0, (app.fileInfo?.height || 0) - (app.cropHeight || 0))"
+                        :disabled="!app.fileInfo?.height || app.cropHeight >= app.fileInfo?.height"
+                        class="crop-input"
+                    />
+                </InputGroup>
+            </div>
+
+            <div class="flex w-full segmented-control">
+                <label
+                    class="flex flex-col grow items-start gap-2 segment-left"
                     for="planes"
                     :class="(app.crossSectionType === 'planes') ? 'activeLabel' : ''"
                 >
@@ -133,11 +286,10 @@
                             />
                         </svg>
                     </div>
-                    <small>Sample pixels via an eased distribution of planes</small>
+                    <small>Sample an eased distribution of planes</small>
                 </label>
                 <label
-                    class="flex flex-col grow items-start gap-2"
-                    style="max-width: 15rem;"
+                    class="flex flex-col grow items-start gap-2 segment-right"
                     for="waves"
                     :class="(app.crossSectionType === 'waves') ? 'activeLabel' : ''"
                 >
@@ -162,13 +314,11 @@
                             <path d="M0,15C8,7.5,15.9,0,25,0s17.1,7.5,25,15c8,7.5,15.9,15,25,15s17.1-7.5,25-15" />
                         </svg>
                     </div>
-                    <small>Sample pixels via evenly distributed corrugated forms</small>
+                    <small>Sample a linear distribution of wave forms</small>
                 </label>
             </div>
 
-
             <div class="flex gap-2 justify-start items-center">
-
                 <span>Sample</span>
                 <InputNumber
                     v-model="app.crossSectionCount"
@@ -181,18 +331,9 @@
                     v-model="app.samplingMode"
                     :options="['columns', 'rows']"
                 />
-
                 <span>of</span>
-                <span
-                    v-if="app.fileInfo?.width && app.samplingMode == 'rows'"
-                    class="sample-pixel-count"
-                >
-                    {{ app.fileInfo.width }}px</span>
-                <span
-                    v-if="app.fileInfo?.height && app.samplingMode == 'columns'"
-                    class="sample-pixel-count"
-                >
-                    {{ app.fileInfo.height }}px</span>
+                <span v-if="app.samplePixelCount">
+                    {{ app.samplePixelCount }}px</span>
                 <span>from</span>
                 <InputNumber
                     v-model="app.framesToSample"
@@ -205,12 +346,14 @@
             </div>
 
 
+
+
+
             <h3 class="text-xl">Output</h3>
 
-            <div class="flex w-full gap-6">
+            <div class="flex w-full segmented-control">
                 <label
-                    style="max-width: 15rem;"
-                    class="flex flex-col grow items-start gap-2"
+                    class="flex flex-col grow items-start gap-2 segment-left"
                     for="webm"
                     :class="(app.outputFormat === 'webm') ? 'activeLabel' : ''"
                 >
@@ -225,8 +368,7 @@
                     </div>
                 </label>
                 <label
-                    style="max-width: 15rem;"
-                    class="flex flex-col grow items-start gap-2"
+                    class="flex flex-col grow items-start gap-2 segment-right"
                     for="ktx2"
                     :class="(app.outputFormat === 'ktx2') ? 'activeLabel' : ''"
                 >
@@ -366,7 +508,7 @@
 
         </div>
 
-        <div class="flex flex-col items-start gap-2">
+        <div class="tiles-column flex flex-col items-start gap-2">
             <div
                 v-if="tilePlan?.tiles?.length"
                 :class="(app.outputMode == 'columns') ? 'tile-container-columns' : 'tile-container-rows'"
@@ -401,8 +543,44 @@
         </div>
 
     </div>
+    <div
+        v-else
+        class="settings-placeholder"
+    >
+        <p>Please <a
+                href="#"
+                @click.prevent="app.currentTab = '0'"
+            >upload a video</a> to define processing settings here.</p>
+    </div>
 </template>
 <style scoped>
+
+    /* Three-column layout container */
+    .three-column-layout {
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    /* Three-column layout flex basis settings */
+    .file-info-narrow {
+        flex: 0 1 20%;
+        min-width: 0;
+    }
+
+    .file-info-wide {
+        flex: 0 1 30%;
+        min-width: 0;
+    }
+
+    .settings-column {
+        flex: 0 1 700px;
+        min-width: 400px;
+    }
+
+    .tiles-column {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
 
     span.sample-pixel-count {
         font-variant: small-caps;
@@ -461,7 +639,7 @@
 
 
 
-    label {
+    .segmented-control label {
         box-shadow: rgba(0, 30, 43, 0.3) 0px 4px 10px -4px;
         padding: 1.5rem;
         border-radius: 1rem;
@@ -469,30 +647,30 @@
         outline: 2px solid #eee;
     }
 
-    label span {
+    .segmented-control label span {
         font-weight: 700;
     }
 
-    label:hover {
+    .segmented-control label:hover {
         outline: 2px solid lightgreen;
     }
 
-    label.activeLabel {
+    .segmented-control label.activeLabel {
         outline: 2px solid #10b981;
     }
 
-    label svg {
+    .segmented-control label svg {
         background: #ddd;
         width: 6rem;
         margin-left: auto;
     }
 
-    label.activeLabel svg {
+    .segmented-control label.activeLabel svg {
         background: #10b981;
     }
 
-    label svg line,
-    label svg path {
+    .segmented-control label svg line,
+    .segmented-control label svg path {
         fill: none;
         stroke: #fff;
         stroke-miterlimit: 10;
@@ -504,5 +682,57 @@
 
     :deep(.frames-input .p-inputnumber-input) {
         width: 6rem;
+    }
+
+    :deep(.crop-input .p-inputnumber-input) {
+        width: 5rem;
+    }
+
+    .disabled-group {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    /* Segmented control styling */
+    .segmented-control {
+        gap: 0;
+    }
+
+    .segmented-control label {
+        box-shadow: none;
+        outline: 2px solid #eee;
+        max-width: 50%;
+    }
+
+    .segmented-control label.segment-left {
+        border-radius: 1rem 0 0 1rem;
+    }
+
+    .segmented-control label.segment-right {
+        border-radius: 0 1rem 1rem 0;
+    }
+
+    .segmented-control label.activeLabel {
+        outline: 2px solid #10b981;
+        background-color: #ecfdf5;
+        z-index: 1;
+    }
+
+    .settings-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 600px;
+        color: #64748b;
+    }
+
+    .settings-placeholder a {
+        color: #3b82f6;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    .settings-placeholder a:hover {
+        color: #2563eb;
     }
 </style>

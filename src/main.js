@@ -14,7 +14,7 @@ loadMaterialSymbols([
     'step_over', 'close_fullscreen', 'open_in_full', 'warning',
     'video_file', 'frame_source', 'barcode', 'timer', 'speed',
     'calculate', 'view_compact', 'rotate_right', 'equalizer',
-    'arrow_range', 'double_arrow', 'filter_alt'
+    'arrow_range', 'double_arrow', 'filter_alt', 'play_arrow', 'volume_off', 'volume_up', 'pause'
 ])
 // Note: we could also import the entire set, but the bundle is too big.
 // import 'material-symbols/outlined.css';

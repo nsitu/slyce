@@ -9,6 +9,9 @@ import { KTX2WorkerPool } from './ktx2-worker-pool.js';
 // Singleton worker pool for KTX2 encoding (reused across all tiles)
 let ktx2WorkerPool = null;
 
+// Abort controller for cancelling processing
+let abortController = null;
+
 /**
  * Cleanup function to terminate the worker pool when done
  */
@@ -20,7 +23,26 @@ const cleanupKTX2Workers = () => {
     }
 };
 
+/**
+ * Abort any ongoing video processing
+ */
+const abortProcessing = () => {
+    if (abortController) {
+        console.log('[VideoProcessor] Aborting processing...');
+        abortController.abort();
+        abortController = null;
+    }
+    cleanupKTX2Workers();
+};
+
 const processVideo = async (settings) => {
+
+    // Abort any previous processing
+    abortProcessing();
+    
+    // Create new abort controller for this processing run
+    abortController = new AbortController();
+    const abortSignal = abortController.signal;
 
     let frameNumber = 0;
 
@@ -52,16 +74,21 @@ const processVideo = async (settings) => {
 
     // Log upfront information about the processing plan
     if (framesSkippedByLimit > 0) {
-        app.log(`Frame limit set to ${effectiveFrameCount} of ${app.frameCount} total frames.`);
+        app.setStatus('Frame Limit', `Using ${effectiveFrameCount} of ${app.frameCount} total frames`);
     }
     if (framesSkippedByTiling > 0) {
         const skippedStart = lastTileEnd + 1;
         const skippedEnd = effectiveFrameCount;
-        app.log(`Processing ${tilePlan.tiles.length} tile(s) using frames 1-${lastTileEnd}.`);
-        app.log(`Frames ${skippedStart}-${skippedEnd} (${framesSkippedByTiling} frames) will be skipped due to tiling.`);
+        app.setStatus('Processing', 
+            `${tilePlan.tiles.length} tile(s) using frames 1-${lastTileEnd}. ` +
+            `Frames ${skippedStart}-${skippedEnd} (${framesSkippedByTiling} frames) are outside tile boundaries and will be skipped.`);
     } else {
-        app.log(`Processing ${tilePlan.tiles.length} tile(s) using all ${framesUsed} frames.`);
+        app.setStatus('Processing', `${tilePlan.tiles.length} tile(s) using all ${framesUsed} frames.`);
     }
+
+    // Initialize encoding status
+    app.setStatus('KTX2 Encoding', `Encoded 0 of ${tilePlan.tiles.length} tiles`);
+    app.setStatus('Tile 1', 'Queued');
 
     // Create mediabunny input and video sample sink
     const input = new Input({
@@ -76,6 +103,13 @@ const processVideo = async (settings) => {
     // VideoSampleSink automatically decodes frames using WebCodecs (non-blocking)
     for await (const videoSample of sink.samples()) {
 
+        // Check if processing was aborted
+        if (abortSignal.aborted) {
+            console.log('[VideoProcessor] Processing aborted, stopping...');
+            videoSample.close();
+            break;
+        }
+
         // Convert VideoSample to VideoFrame for compatibility with tileBuilder
         const videoFrame = videoSample.toVideoFrame();
 
@@ -84,11 +118,39 @@ const processVideo = async (settings) => {
         let effectiveFileInfo = fileInfo;
 
         try {
+            // Step 1: Apply cropping if enabled
+            if (tilePlan.isCropping) {
+                const cropCanvas = new OffscreenCanvas(tilePlan.cropWidth, tilePlan.cropHeight);
+                const cropCtx = cropCanvas.getContext('2d');
+
+                // Draw only the cropped region
+                cropCtx.drawImage(videoFrame,
+                    tilePlan.cropX, tilePlan.cropY, tilePlan.cropWidth, tilePlan.cropHeight,  // Source rect
+                    0, 0, tilePlan.cropWidth, tilePlan.cropHeight                              // Dest rect
+                );
+
+                // Create new VideoFrame from cropped canvas
+                processedFrame = new VideoFrame(cropCanvas, {
+                    timestamp: videoFrame.timestamp
+                });
+
+                // Update fileInfo to reflect cropped dimensions
+                effectiveFileInfo = {
+                    ...fileInfo,
+                    width: tilePlan.cropWidth,
+                    height: tilePlan.cropHeight
+                };
+
+                // Clean up original frame
+                videoFrame.close();
+            }
+
+            // Step 2: Apply scaling if needed (now operates on cropped frame)
             if (tilePlan.isScaled && app.downsampleStrategy === 'upfront') {
                 // Calculate scale factor (maintains aspect ratio)
                 const scaleFactor = tilePlan.scaleTo / tilePlan.scaleFrom;
-                const scaledWidth = Math.floor(fileInfo.width * scaleFactor);
-                const scaledHeight = Math.floor(fileInfo.height * scaleFactor);
+                const scaledWidth = Math.floor(effectiveFileInfo.width * scaleFactor);
+                const scaledHeight = Math.floor(effectiveFileInfo.height * scaleFactor);
 
                 // Create temporary canvas for downsampling
                 const tempCanvas = new OffscreenCanvas(scaledWidth, scaledHeight);
@@ -98,26 +160,29 @@ const processVideo = async (settings) => {
                 tempCtx.imageSmoothingEnabled = true;
                 tempCtx.imageSmoothingQuality = 'high';
 
-                // Downsample entire frame
-                tempCtx.drawImage(videoFrame,
-                    0, 0, fileInfo.width, fileInfo.height,    // Source: full frame
-                    0, 0, scaledWidth, scaledHeight           // Dest: scaled frame
+                // Downsample entire frame (use processedFrame which may be cropped)
+                tempCtx.drawImage(processedFrame,
+                    0, 0, effectiveFileInfo.width, effectiveFileInfo.height,    // Source: effective frame
+                    0, 0, scaledWidth, scaledHeight                              // Dest: scaled frame
                 );
+
+                // Store reference to frame that needs closing
+                const frameToClose = processedFrame;
 
                 // Create new VideoFrame from downsampled canvas
                 processedFrame = new VideoFrame(tempCanvas, {
-                    timestamp: videoFrame.timestamp
+                    timestamp: frameToClose.timestamp
                 });
 
                 // Update fileInfo to reflect scaled dimensions
                 effectiveFileInfo = {
-                    ...fileInfo,
+                    ...effectiveFileInfo,
                     width: scaledWidth,
                     height: scaledHeight
                 };
 
-                // Clean up original frame
-                videoFrame.close();
+                // Clean up the previous frame (may be original or cropped)
+                frameToClose.close();
             }
 
             frameNumber++;
@@ -157,6 +222,7 @@ const processVideo = async (settings) => {
                     delete tileBuilders[tileNumber];
 
                     const { images, kind } = payload;
+                    const totalTiles = tilePlan.tiles.length;
 
                     if (kind === 'ktx2') {
                         // KTX2 mode: Encode RGBA frames to KTX2 using parallel workers
@@ -170,9 +236,9 @@ const processVideo = async (settings) => {
                                 console.log(`[KTX2] Worker pool created and will be reused for all tiles`);
                             }
 
-                            // Progress callback to update status
+                            // Per-tile progress callback
                             const onProgress = (layersEncoded, totalLayers) => {
-                                app.setStatus(`Encoding Tile ${tileNumber}`, `Encoded layer ${layersEncoded} of ${totalLayers}`);
+                                app.setStatus(`Tile ${tileNumber + 1}`, `Encoding layer ${layersEncoded} of ${totalLayers}`);
                             };
 
                             // Use parallel encoding with shared worker pool
@@ -182,10 +248,13 @@ const processVideo = async (settings) => {
                             // Register KTX2 blob URL using new helper
                             app.registerBlobURL('ktx2', tileNumber, blob);
 
+                            // Remove per-tile status when this tile is done
+                            app.removeStatus(`Tile ${tileNumber + 1}`);
+
                             console.log(`[KTX2] Tile ${tileNumber} encoded: ${(blob.size / 1024).toFixed(1)}KB`);
                         } catch (error) {
                             console.error(`[KTX2] Failed to encode tile ${tileNumber}:`, error);
-                            app.log(`KTX2 encoding failed for tile ${tileNumber}: ${error.message}`);
+                            app.setStatus(`Tile ${tileNumber + 1} Error`, error.message);
                         }
                     } else {
                         // WebM mode: Use existing video encoder
@@ -195,15 +264,28 @@ const processVideo = async (settings) => {
 
                     // Track completion and cleanup when all tiles are done
                     completedTiles++;
-                    if (completedTiles === tilePlan.tiles.length) {
+
+                    // Update overall progress
+                    app.setStatus('KTX2 Encoding', `Encoded ${completedTiles} of ${totalTiles} tiles`);
+
+                    // Show next tile as 'Queued' if there are more tiles
+                    if (completedTiles < totalTiles) {
+                        app.setStatus(`Tile ${completedTiles + 1}`, 'Queued');
+                    }
+
+                    if (completedTiles === totalTiles) {
                         console.log(`[VideoProcessor] All ${completedTiles} tiles completed`);
+                        // Remove all processing status messages
+                        app.removeStatus('KTX2 Encoding');
+                        app.removeStatus('Processing');
+                        app.removeStatus('Frame Limit');
+                        app.removeStatus('Decoding');
+                        app.removeStatus('System');
                         // Cleanup KTX2 worker pool if it was used
                         if (app.outputFormat === 'ktx2') {
                             cleanupKTX2Workers();
                         }
                     }
-
-                    app.set('currentTab', '3');
                 });
             }
 
@@ -236,4 +318,4 @@ const processVideo = async (settings) => {
 
 }
 
-export { processVideo, cleanupKTX2Workers }
+export { processVideo, cleanupKTX2Workers, abortProcessing }

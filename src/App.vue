@@ -3,16 +3,14 @@
     import { useAppStore } from './stores/appStore';
     const app = useAppStore()  // Pinia store
 
-    import { onMounted } from 'vue';
+    import { onMounted, computed, watch } from 'vue';
     import { dragAndDrop } from './modules/dragAndDropHandler';
 
     import Header from './components/Header.vue'
     import Footer from './components/Footer.vue'
     import UploadArea from './components/UploadArea.vue';
-    import ActivityLog from './components/ActivityLog.vue';
-    import StatusBox from './components/StatusBox.vue';
     import SettingsArea from './components/SettingsArea.vue';
-    import DownloadArea from './components/DownloadArea.vue';
+    import ResultsArea from './components/ResultsArea.vue';
 
 
     import Tabs from 'primevue/tabs';
@@ -21,6 +19,24 @@
     import TabPanels from 'primevue/tabpanels';
     import TabPanel from 'primevue/tabpanel';
 
+    // Check if processing is in progress
+    const isProcessing = computed(() => Object.keys(app.status).length > 0);
+
+    // Handle tab changes - confirm if leaving Results during processing
+    function handleTabChange(newTab) {
+        // If switching away from Results tab while processing
+        if (app.currentTab === '2' && newTab !== '2' && isProcessing.value) {
+            const confirmed = confirm(
+                'Processing is in progress. Switching tabs will abandon the current process and clear any generated results. Continue?'
+            );
+            if (!confirmed) {
+                return; // Don't change tab
+            }
+            // Clear processing results but keep video and settings
+            app.resetProcessing();
+        }
+        app.currentTab = newTab;
+    }
 
     onMounted(() => {
         dragAndDrop((file) => {
@@ -37,12 +53,20 @@
 
         <Header></Header>
 
-        <Tabs v-model:value="app.currentTab">
+        <Tabs :value="app.currentTab">
             <TabList>
-                <Tab value="0">Start</Tab>
-                <Tab value="1">Settings</Tab>
-                <Tab value="2">Process</Tab>
-                <Tab value="3">Output</Tab>
+                <Tab
+                    value="0"
+                    @click="handleTabChange('0')"
+                >Start</Tab>
+                <Tab
+                    value="1"
+                    @click="handleTabChange('1')"
+                >Settings</Tab>
+                <Tab
+                    value="2"
+                    @click="handleTabChange('2')"
+                >Results</Tab>
             </TabList>
             <TabPanels>
                 <TabPanel value="0">
@@ -52,11 +76,7 @@
                     <SettingsArea></SettingsArea>
                 </TabPanel>
                 <TabPanel value="2">
-                    <ActivityLog></ActivityLog>
-                    <StatusBox></StatusBox>
-                </TabPanel>
-                <TabPanel value="3">
-                    <DownloadArea></DownloadArea>
+                    <ResultsArea />
                 </TabPanel>
             </TabPanels>
         </Tabs>
@@ -77,5 +97,4 @@
         color: #2c3e50;
         min-height: 100vh;
     }
-
 </style>

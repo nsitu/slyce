@@ -30,7 +30,7 @@
         }
     });
 
-    const emit = defineEmits(['playback-state-change']);
+    const emit = defineEmits(['playback-state-change', 'ready']);
 
     const videoElement = ref(null);
     const isReady = ref(false);
@@ -63,22 +63,26 @@
         animationFrame = requestAnimationFrame(trackPlayback);
     }
 
+    let timeUpdateInterval = null;
+
     onMounted(() => {
         if (videoElement.value) {
             videoElement.value.addEventListener('loadedmetadata', () => {
                 isReady.value = true;
+                emit('ready');
                 if (props.isPrimary) {
                     emitPlaybackState();
                     trackPlayback();
                 }
 
-
-                setInterval(() => {
-                    if (videoElement.value) {
-                        currentTime.value = videoElement.value.currentTime;
-                    }
-                }, 100);
-
+                // Only create interval if not already running
+                if (!timeUpdateInterval) {
+                    timeUpdateInterval = setInterval(() => {
+                        if (videoElement.value) {
+                            currentTime.value = videoElement.value.currentTime;
+                        }
+                    }, 100);
+                }
             });
 
             if (props.isPrimary) {
@@ -91,6 +95,10 @@
     onUnmounted(() => {
         if (animationFrame) {
             cancelAnimationFrame(animationFrame);
+        }
+        if (timeUpdateInterval) {
+            clearInterval(timeUpdateInterval);
+            timeUpdateInterval = null;
         }
         if (videoElement.value && props.isPrimary) {
             videoElement.value.removeEventListener('loadedmetadata', emitPlaybackState);
@@ -141,6 +149,36 @@
     const handlePause = () => {
         videoElement.value.pause();
     };
+
+    // Expose video element and utility methods for external components
+    defineExpose({
+        videoElement,
+        isReady,
+        play: handlePlay,
+        pause: handlePause,
+        getVideoDimensions: () => {
+            const el = videoElement.value;
+            if (!el) return { displayWidth: 0, displayHeight: 0, videoWidth: 0, videoHeight: 0 };
+
+            // Use getBoundingClientRect for accurate screen dimensions
+            // This correctly handles rotation metadata applied by the browser
+            const rect = el.getBoundingClientRect();
+
+            return {
+                displayWidth: rect.width,
+                displayHeight: rect.height,
+                videoWidth: el.videoWidth || 0,
+                videoHeight: el.videoHeight || 0
+            };
+        },
+        getCurrentTime: () => videoElement.value?.currentTime || 0,
+        getDuration: () => videoElement.value?.duration || 0,
+        seek: (time) => {
+            if (videoElement.value) {
+                videoElement.value.currentTime = time;
+            }
+        }
+    });
 
 </script>
 <template>

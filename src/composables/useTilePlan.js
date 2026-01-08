@@ -22,6 +22,12 @@ export function useTilePlan() {
             scaleTo: 0,
             rotate: 0, // Rotation angle (0 or 90 degrees)
             skipping: 0, // Number of frames being skipped
+            // Cropping info (passed to videoProcessor)
+            isCropping: false,
+            cropX: 0,
+            cropY: 0,
+            cropWidth: 0,
+            cropHeight: 0,
         };
 
         // Ensure necessary data is available
@@ -37,6 +43,17 @@ export function useTilePlan() {
 
         // Use the user-limited frame count (framesToSample) if set, otherwise use full frameCount
         const effectiveFrameCount = app.framesToSample > 0 ? Math.min(app.framesToSample, app.frameCount) : app.frameCount;
+
+        // Determine effective dimensions based on crop settings
+        const effectiveWidth = app.cropMode && app.cropWidth ? app.cropWidth : app.fileInfo.width;
+        const effectiveHeight = app.cropMode && app.cropHeight ? app.cropHeight : app.fileInfo.height;
+
+        // Store crop info in plan for videoProcessor
+        plan.isCropping = app.cropMode;
+        plan.cropX = app.cropMode ? app.cropX : 0;
+        plan.cropY = app.cropMode ? app.cropY : 0;
+        plan.cropWidth = effectiveWidth;
+        plan.cropHeight = effectiveHeight;
 
         // Determine rotation based on samplingMode and outputMode
         if (app.samplingMode !== app.outputMode) {
@@ -58,7 +75,8 @@ export function useTilePlan() {
 
         // Initialize variables
         let framesPerTile; // Number of frames per tile (temporal side)
-        let spatialSide = app.samplePixelCount; // Spatial side length (width or height based on samplingMode)
+        // Use effective dimensions for spatial side calculation
+        let spatialSide = app.samplingMode === 'rows' ? effectiveWidth : effectiveHeight;
         let maxQualityTiles; // Maximum number of tiles for quality reference
 
         // Begin processing based on tileMode

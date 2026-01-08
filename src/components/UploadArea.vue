@@ -17,7 +17,7 @@
 </script>
 
 <template>
-    <div class="flex gap-4 items-center justify-center w-auto border-2 border-gray-300 rounded-md p-4">
+    <div class="upload-area flex gap-4 items-center justify-center w-auto border-2 border-gray-300 rounded-md p-4">
         <h3 class="flex items-center gap-2 text-xl"><img
                 src="/video-upload.svg"
                 alt="Upload Video"
@@ -41,3 +41,17 @@
         </div>
     </div>
 </template>
+
+<style scoped>
+    .upload-area {
+        min-height: 600px;
+        border: 3px dashed #999;
+        background: #f6f6f6;
+        margin: 3rem;
+        transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #browse-button {
+        cursor: pointer;
+    }
+</style>

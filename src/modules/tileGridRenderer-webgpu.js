@@ -278,6 +278,14 @@ export class TileGridRendererWebGPU {
     }
 
     /**
+     * Remove all tiles from the grid (for reset)
+     */
+    clearAllTiles() {
+        this.tiles.forEach((_, tileId) => this.removeTile(tileId));
+        console.log('[TileGridRenderer WebGPU] All tiles cleared');
+    }
+
+    /**
      * Update tile position and size without reloading texture
      * @param {string|number} tileId - Tile identifier
      * @param {Object} position - { x, y } position in grid
