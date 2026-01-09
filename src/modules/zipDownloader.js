@@ -5,10 +5,67 @@ import JSZip from 'jszip';
  * @param {Object} blobURLs - Map of tile numbers to blob URLs
  * @param {Object} fileInfo - File metadata
  * @param {Object} format - Format descriptor { mime, extension }
+ * @param {Object} appStore - The app store instance containing all settings
  */
-export async function downloadAllAsZip(blobURLs, fileInfo, format) {
+export async function downloadAllAsZip(blobURLs, fileInfo, format, appStore) {
     const zip = new JSZip();
     const filename = fileInfo?.name?.replace(/\.[^/.]+$/, '') || 'video';
+
+    // Create metadata object with video info and settings
+    const metadata = {
+        generatedBy: 'Slyce',
+        generatedAt: new Date().toISOString(),
+
+        // Original video metadata
+        video: {
+            name: fileInfo?.name,
+            size: fileInfo?.size,
+            type: fileInfo?.type,
+            width: fileInfo?.width,
+            height: fileInfo?.height,
+            duration: fileInfo?.duration,
+            frameCount: appStore?.frameCount,
+        },
+
+        // Processing settings
+        settings: {
+            framesToSample: appStore?.framesToSample,
+            crossSectionCount: appStore?.crossSectionCount,
+            crossSectionType: appStore?.crossSectionType,
+            samplingMode: appStore?.samplingMode,
+            outputMode: appStore?.outputMode,
+            tileMode: appStore?.tileMode,
+            tileProportion: appStore?.tileProportion,
+            prioritize: appStore?.prioritize,
+            potResolution: appStore?.potResolution,
+            downsampleStrategy: appStore?.downsampleStrategy,
+            outputFormat: appStore?.outputFormat,
+        },
+
+        // Crop settings (if applicable)
+        crop: appStore?.cropMode ? {
+            enabled: true,
+            x: appStore?.cropX,
+            y: appStore?.cropY,
+            width: appStore?.cropWidth,
+            height: appStore?.cropHeight,
+        } : {
+            enabled: false,
+        },
+
+        // Tile plan
+        tilePlan: appStore?.tilePlan,
+
+        // Output info
+        output: {
+            format: format.extension,
+            mimeType: format.mime,
+            tileCount: Object.keys(blobURLs).length,
+        }
+    };
+
+    // Add metadata.json to the zip
+    zip.file('metadata.json', JSON.stringify(metadata, null, 2));
 
     // Add each blob to the zip with simple numeric names
     for (const [tileNumber, blobUrl] of Object.entries(blobURLs)) {

@@ -143,7 +143,7 @@
                 ? { mime: 'image/ktx2', extension: 'ktx2' }
                 : { mime: 'video/webm', extension: 'webm' };
 
-            await downloadAllAsZip(currentBlobURLs.value, app.fileInfo, format);
+            await downloadAllAsZip(currentBlobURLs.value, app.fileInfo, format, app);
         } catch (error) {
             console.error('Failed to create ZIP:', error);
             alert('Failed to create ZIP file. Files may be too large.');
