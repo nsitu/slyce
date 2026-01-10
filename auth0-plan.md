@@ -1026,20 +1026,20 @@ VITE_API_URL=https://api.rivvon.ca
 ### Phase 7: Testing Checklist
 
 #### Authentication Flow
-- [ ] Local development login works
-- [ ] Callback redirect works correctly
-- [ ] User info displays after login
-- [ ] Access token is retrieved successfully
-- [ ] Logout clears session
-- [ ] Auth state persists across page reloads
+- [x] Local development login works
+- [x] Callback redirect works correctly
+- [x] User info displays after login
+- [x] Access token is retrieved successfully
+- [x] Logout clears session
+- [x] Auth state persists across page reloads
 
 #### UI Components
-- [ ] Login prompt displays for unauthenticated users
-- [ ] Loading state shows while checking authentication
-- [ ] User profile card displays with avatar, name, and email
-- [ ] Auth button shows correct state (login/logout)
-- [ ] Upload button is disabled when not authenticated
-- [ ] Upload button shows "Login Required" text when disabled
+- [x] Login prompt displays for unauthenticated users
+- [x] Loading state shows while checking authentication
+- [x] User profile card displays with avatar, name, and email
+- [x] Auth button shows correct state (login/logout)
+- [x] Upload button is disabled when not authenticated
+- [x] Upload button shows "Login Required" text when disabled
 - [ ] Error messages display properly for auth failures
 
 #### API Integration
@@ -1049,9 +1049,9 @@ VITE_API_URL=https://api.rivvon.ca
 - [ ] API errors are caught and displayed to user
 
 #### Production
-- [ ] Production environment variables are set in Cloudflare Pages
-- [ ] Production login/logout works on `slyce.rivvon.ca`
-- [ ] Callback URL works in production
+- [x] Production environment variables are set in Cloudflare Pages
+- [x] Production login/logout works on `slyce.rivvon.ca`
+- [x] Callback URL works in production
 - [ ] CORS is properly configured
 
 ---

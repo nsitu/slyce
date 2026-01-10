@@ -35,6 +35,75 @@
             </svg>
         </button>
 
+        <!-- Upload to CDN Button -->
+        <button
+            @click="uploadToCDN"
+            :disabled="isUploading || !isAuthenticated"
+            class="upload-cdn-button px-6 py-2 rounded-md transition-colors duration-300 mb-4 flex items-center"
+            :class="isAuthenticated ? 'bg-purple-500 text-white hover:bg-purple-600' : 'bg-gray-400 text-gray-200 cursor-not-allowed'"
+            :title="!isAuthenticated ? 'Login required to upload' : 'Upload all tiles to Rivvon CDN'"
+        >
+            <span v-if="isUploading && uploadProgress">{{ uploadProgress }}</span>
+            <span v-else-if="isUploading">Uploading...</span>
+            <span v-else-if="!isAuthenticated">Login to Upload</span>
+            <span v-else>Upload to CDN</span>
+
+            <svg
+                v-if="isUploading"
+                class="animate-spin h-5 w-5 text-white ml-2"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+            >
+                <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                ></circle>
+                <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+            </svg>
+
+            <span
+                v-if="uploadSuccess"
+                class="ml-2 text-green-200"
+            >✓ Uploaded!</span>
+            <span
+                v-if="uploadError"
+                class="ml-2 text-red-200"
+            >✗ {{ uploadError }}</span>
+        </button>
+
+        <!-- Show uploaded URLs -->
+        <div
+            v-if="uploadedTextureSetId"
+            class="uploaded-urls mb-4 p-3 bg-green-50 border border-green-200 rounded-md"
+        >
+            <p class="text-sm font-medium text-green-800 mb-2">
+                Texture Set: <code class="bg-green-100 px-1 rounded">{{ uploadedTextureSetId }}</code>
+            </p>
+            <p class="text-xs text-green-700 mb-2">CDN URLs:</p>
+            <ul class="text-xs text-green-700 space-y-1">
+                <li
+                    v-for="(url, index) in uploadedUrls"
+                    :key="index"
+                    class="break-all"
+                >
+                    <a
+                        :href="url"
+                        target="_blank"
+                        class="hover:underline"
+                    >{{ url }}</a>
+                </li>
+            </ul>
+        </div>
+
         <div class="flex flex-wrap gap-2">
             <button
                 v-for="(blobURL, tileNumber) in currentBlobURLs"
@@ -86,12 +155,26 @@
 
 <script setup>
     import { computed, reactive, ref } from 'vue';
+    import { useAuth0 } from '@auth0/auth0-vue';
     import { downloadBlob } from '../modules/blobDownloader.js';
     import { downloadAllAsZip } from '../modules/zipDownloader.js';
     import { useAppStore } from '../stores/appStore';
+    import { useRivvonAPI } from '../services/api.js';
 
     // Access the Pinia store
     const app = useAppStore();
+
+    // Auth0 and API integration
+    const { isAuthenticated } = useAuth0();
+    const { uploadTextureSet } = useRivvonAPI();
+
+    // Upload state
+    const isUploading = ref(false);
+    const uploadProgress = ref('');
+    const uploadSuccess = ref(false);
+    const uploadError = ref(null);
+    const uploadedTextureSetId = ref(null);
+    const uploadedUrls = ref([]);
 
     // Computed property for current blob URLs based on format
     const currentBlobURLs = computed(() => {
@@ -149,6 +232,68 @@
             alert('Failed to create ZIP file. Files may be too large.');
         } finally {
             isDownloadingZip.value = false;
+        }
+    };
+
+    // Upload all tiles to Rivvon CDN
+    const uploadToCDN = async () => {
+        if (isUploading.value || !isAuthenticated.value) return;
+
+        isUploading.value = true;
+        uploadSuccess.value = false;
+        uploadError.value = null;
+        uploadProgress.value = 'Creating texture set...';
+        uploadedUrls.value = [];
+        uploadedTextureSetId.value = null;
+
+        try {
+            const blobUrls = Object.entries(currentBlobURLs.value);
+            const baseName = app.fileInfo?.name?.replace(/\.[^.]+$/, '') || 'texture';
+
+            // Prepare tiles array with blobs
+            const tiles = [];
+            for (const [tileNumber, blobUrl] of blobUrls) {
+                const response = await fetch(blobUrl);
+                const blob = await response.blob();
+                tiles.push({
+                    index: parseInt(tileNumber),
+                    blob,
+                });
+            }
+
+            // Upload texture set with all tiles
+            const result = await uploadTextureSet({
+                name: baseName,
+                description: `Uploaded from Slyce on ${new Date().toLocaleDateString()}`,
+                tileResolution: app.tileSize || 512,
+                layerCount: app.layerCount || 60,
+                crossSectionType: app.variant || 'planes',
+                sourceMetadata: {
+                    filename: app.fileInfo?.name,
+                    width: app.fileInfo?.width,
+                    height: app.fileInfo?.height,
+                    duration: app.fileInfo?.duration,
+                    frameCount: app.frameCount,
+                },
+                tiles,
+                onProgress: (current, total) => {
+                    uploadProgress.value = `Uploading tile ${current}/${total}...`;
+                },
+            });
+
+            uploadedTextureSetId.value = result.textureSetId;
+            uploadedUrls.value = result.cdnUrls.map((t) => t.url);
+
+            uploadSuccess.value = true;
+            uploadProgress.value = '';
+            setTimeout(() => { uploadSuccess.value = false; }, 5000);
+        } catch (error) {
+            console.error('CDN upload failed:', error);
+            uploadError.value = error.message || 'Upload failed';
+            uploadProgress.value = '';
+            setTimeout(() => { uploadError.value = null; }, 5000);
+        } finally {
+            isUploading.value = false;
         }
     };
 </script>
