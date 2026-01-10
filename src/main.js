@@ -1,9 +1,11 @@
 
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';
+import { createAuth0 } from '@auth0/auth0-vue';
 import PrimeVue from 'primevue/config';
 import Aura from '@primevue/themes/aura';
 import App from './App.vue';
+import router from './router';
 
 
 // Material Icons 
@@ -14,7 +16,8 @@ loadMaterialSymbols([
     'step_over', 'close_fullscreen', 'open_in_full', 'warning',
     'video_file', 'frame_source', 'barcode', 'timer', 'speed',
     'calculate', 'view_compact', 'rotate_right', 'equalizer',
-    'arrow_range', 'double_arrow', 'filter_alt', 'play_arrow', 'volume_off', 'volume_up', 'pause'
+    'arrow_range', 'double_arrow', 'filter_alt', 'play_arrow', 'volume_off', 'volume_up', 'pause',
+    'login', 'logout', 'account_circle'
 ])
 // Note: we could also import the entire set, but the bundle is too big.
 // import 'material-symbols/outlined.css';
@@ -25,6 +28,22 @@ const app = createApp(App);
 const pinia = createPinia();
 app.use(pinia);
 
+// Configure Vue Router
+app.use(router);
+
+// Configure Auth0
+app.use(
+    createAuth0({
+        domain: import.meta.env.VITE_AUTH0_DOMAIN,
+        clientId: import.meta.env.VITE_AUTH0_CLIENT_ID,
+        authorizationParams: {
+            redirect_uri: import.meta.env.VITE_AUTH0_REDIRECT_URI || window.location.origin + '/callback',
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+            scope: 'openid profile email upload:textures delete:textures',
+        },
+        cacheLocation: 'localstorage', // Persist auth across page reloads
+    })
+);
 
 app.use(PrimeVue, {
     theme: {
