@@ -159,6 +159,7 @@ export function useRivvonAPI() {
         const {
             name,
             description,
+            isPublic = true,
             tileResolution,
             layerCount,
             crossSectionType,
@@ -173,6 +174,7 @@ export function useRivvonAPI() {
         const { textureSetId, uploadUrls } = await createTextureSet({
             name,
             description,
+            isPublic,
             tileResolution,
             tileCount: tiles.length,
             layerCount,
@@ -245,6 +247,49 @@ export function useRivvonAPI() {
         return response.json()
     }
 
+    /**
+     * Get current user's texture sets (authenticated)
+     * GET /my/textures
+     */
+    async function getMyTextures() {
+        const token = await getAccessToken()
+
+        const response = await fetch(`${API_BASE_URL}/my/textures`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        })
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Failed to fetch your textures' }))
+            throw new Error(error.error || 'Failed to fetch your textures')
+        }
+
+        return response.json()
+    }
+
+    /**
+     * Delete a texture set (authenticated, owner only)
+     * DELETE /texture-set/:id
+     */
+    async function deleteTextureSet(textureSetId) {
+        const token = await getAccessToken()
+
+        const response = await fetch(`${API_BASE_URL}/texture-set/${textureSetId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        })
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Failed to delete texture set' }))
+            throw new Error(error.error || 'Failed to delete texture set')
+        }
+
+        return response.json()
+    }
+
     return {
         isAuthenticated,
         getAccessToken,
@@ -255,5 +300,7 @@ export function useRivvonAPI() {
         uploadTextureSet,
         listTextures,
         getTexture,
+        getMyTextures,
+        deleteTextureSet,
     }
 }

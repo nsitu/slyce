@@ -35,6 +35,51 @@
             </svg>
         </button>
 
+        <!-- Upload Options (only show when authenticated) -->
+        <div
+            v-if="isAuthenticated"
+            class="upload-options mb-4 p-3 bg-purple-50 border border-purple-200 rounded-md"
+        >
+            <h5 class="text-sm font-semibold text-purple-800 mb-3">Upload Options</h5>
+
+            <!-- Texture Name Input -->
+            <div class="mb-3">
+                <label
+                    for="textureName"
+                    class="block text-xs font-medium text-purple-700 mb-1"
+                >Texture Name</label>
+                <input
+                    id="textureName"
+                    v-model="textureName"
+                    type="text"
+                    :placeholder="app.fileInfo?.name?.replace(/\.[^.]+$/, '') || 'texture'"
+                    class="w-full px-3 py-2 text-sm border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+            </div>
+
+            <!-- Public Toggle -->
+            <div class="flex items-center justify-between">
+                <label
+                    for="isPublic"
+                    class="text-xs font-medium text-purple-700"
+                >Make texture public</label>
+                <button
+                    id="isPublic"
+                    type="button"
+                    @click="isPublic = !isPublic"
+                    :class="isPublic ? 'bg-purple-600' : 'bg-gray-300'"
+                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                    role="switch"
+                    :aria-checked="isPublic"
+                >
+                    <span
+                        :class="isPublic ? 'translate-x-5' : 'translate-x-0'"
+                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    ></span>
+                </button>
+            </div>
+        </div>
+
         <!-- Upload to CDN Button -->
         <button
             @click="uploadToCDN"
@@ -196,6 +241,10 @@
     const uploadedUrls = ref([]);
     const uploadedThumbnailUrl = ref(null);
 
+    // Upload options
+    const textureName = ref('');
+    const isPublic = ref(true);
+
     // Computed property for current blob URLs based on format
     const currentBlobURLs = computed(() => {
         return app.outputFormat === 'ktx2' ? app.ktx2BlobURLs : app.blobURLs;
@@ -269,7 +318,8 @@
 
         try {
             const blobUrls = Object.entries(currentBlobURLs.value);
-            const baseName = app.fileInfo?.name?.replace(/\.[^.]+$/, '') || 'texture';
+            const defaultName = app.fileInfo?.name?.replace(/\.[^.]+$/, '') || 'texture';
+            const finalName = textureName.value.trim() || defaultName;
 
             // Use thumbnail from store (captured during video processing)
             const thumbnailBlob = app.thumbnailBlob;
@@ -293,8 +343,9 @@
 
             // Upload texture set with all tiles and thumbnail
             const result = await uploadTextureSet({
-                name: baseName,
+                name: finalName,
                 description: `Uploaded from Slyce on ${new Date().toLocaleDateString()}`,
+                isPublic: isPublic.value,
                 tileResolution: app.potResolution || 512,
                 layerCount: app.crossSectionCount || 60,
                 crossSectionType: app.crossSectionType || 'planes',

@@ -7,6 +7,11 @@ const routes = [
         component: () => import('../views/HomeView.vue')
     },
     {
+        path: '/my-textures',
+        name: 'my-textures',
+        component: () => import('../views/MyTexturesView.vue')
+    },
+    {
         path: '/callback',
         name: 'callback',
         component: () => import('../views/CallbackView.vue')

@@ -18,13 +18,37 @@
                     src="/rivvon-black.svg"
                 /></a>
 
+            <!-- Navigation Links -->
+            <div
+                v-if="isAuthenticated"
+                class="nav-links flex gap-4 ml-8"
+            >
+                <router-link
+                    to="/"
+                    class="nav-link text-sm font-medium"
+                    :class="$route.path === '/' ? 'text-purple-600' : 'text-gray-500 hover:text-gray-700'"
+                >
+                    Create
+                </router-link>
+                <router-link
+                    to="/my-textures"
+                    class="nav-link text-sm font-medium"
+                    :class="$route.path === '/my-textures' ? 'text-purple-600' : 'text-gray-500 hover:text-gray-700'"
+                >
+                    My Textures
+                </router-link>
+            </div>
+
         </div>
         <AuthButton />
     </div>
 </template>
 
 <script setup>
+    import { useAuth0 } from '@auth0/auth0-vue'
     import AuthButton from './AuthButton.vue'
+
+    const { isAuthenticated } = useAuth0()
 </script>
 
 <style scoped>
