@@ -106,7 +106,7 @@
         display: flex;
         gap: 1.5rem;
         padding: 1rem;
-        min-height: 600px;
+        min-height: 450px;
     }
 
     .results-sidebar {

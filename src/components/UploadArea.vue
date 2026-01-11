@@ -44,7 +44,7 @@
 
 <style scoped>
     .upload-area {
-        min-height: 600px;
+        min-height: 450px;
         border: 3px dashed #999;
         background: #f6f6f6;
         margin: 3rem;
