@@ -99,6 +99,36 @@ export function useRivvonAPI() {
     }
 
     /**
+     * Upload a thumbnail for the texture set
+     * PUT /upload/texture-set/:setId/thumbnail
+     */
+    async function uploadThumbnail(textureSetId, imageBlob) {
+        const token = await getAccessToken()
+
+        // Determine content type from blob
+        const contentType = imageBlob.type || 'image/jpeg'
+
+        const response = await fetch(
+            `${API_BASE_URL}/upload/texture-set/${textureSetId}/thumbnail`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': contentType,
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: imageBlob,
+            }
+        )
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Thumbnail upload failed' }))
+            throw new Error(error.error || 'Thumbnail upload failed')
+        }
+
+        return response.json()
+    }
+
+    /**
      * Complete texture set upload workflow
      * Creates set, uploads all tiles, marks complete
      * 
@@ -110,7 +140,8 @@ export function useRivvonAPI() {
      * @param {string} options.crossSectionType - 'planes' or 'waves'
      * @param {Object} options.sourceMetadata - Source file metadata
      * @param {Array<{index: number, blob: Blob}>} options.tiles - Array of tile data
-     * @param {Function} options.onProgress - Progress callback (tileIndex, total)
+     * @param {Blob} options.thumbnailBlob - Optional thumbnail image blob
+     * @param {Function} options.onProgress - Progress callback (step, detail)
      */
     async function uploadTextureSet(options) {
         const {
@@ -121,10 +152,12 @@ export function useRivvonAPI() {
             crossSectionType,
             sourceMetadata,
             tiles,
+            thumbnailBlob,
             onProgress,
         } = options
 
         // 1. Create texture set
+        if (onProgress) onProgress('creating', 'Creating texture set...')
         const { textureSetId, uploadUrls } = await createTextureSet({
             name,
             description,
@@ -143,16 +176,30 @@ export function useRivvonAPI() {
             await uploadTile(textureSetId, tile.index, arrayBuffer)
 
             if (onProgress) {
-                onProgress(i + 1, tiles.length)
+                onProgress('tile', `Uploading tile ${i + 1}/${tiles.length}...`)
             }
         }
 
-        // 3. Mark as complete
+        // 3. Upload thumbnail if provided
+        let thumbnailUrl = null
+        if (thumbnailBlob) {
+            if (onProgress) onProgress('thumbnail', 'Uploading thumbnail...')
+            try {
+                const thumbResult = await uploadThumbnail(textureSetId, thumbnailBlob)
+                thumbnailUrl = thumbResult.thumbnailUrl
+            } catch (err) {
+                console.warn('Thumbnail upload failed (non-fatal):', err)
+            }
+        }
+
+        // 4. Mark as complete
+        if (onProgress) onProgress('completing', 'Finalizing...')
         await completeTextureSet(textureSetId)
 
-        // 4. Return texture set info with CDN URLs
+        // 5. Return texture set info with CDN URLs
         return {
             textureSetId,
+            thumbnailUrl,
             cdnUrls: uploadUrls.map((info) => ({
                 tileIndex: info.tileIndex,
                 url: `https://cdn.rivvon.ca/${info.r2Key}`,
@@ -192,6 +239,7 @@ export function useRivvonAPI() {
         createTextureSet,
         uploadTile,
         completeTextureSet,
+        uploadThumbnail,
         uploadTextureSet,
         listTextures,
         getTexture,

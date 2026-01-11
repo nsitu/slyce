@@ -58,6 +58,9 @@ export const useAppStore = defineStore('appStore', {
         cropY: 0,                 // Top offset from original (pixels)
         cropWidth: null,          // Cropped width (null = full width)
         cropHeight: null,         // Cropped height (null = full height)
+
+        // Thumbnail blob for CDN upload (captured during processing)
+        thumbnailBlob: null,
     }),
     actions: {
         set(key, value) {
@@ -177,6 +180,7 @@ export const useAppStore = defineStore('appStore', {
             this.cropY = 0;
             this.cropWidth = null;
             this.cropHeight = null;
+            this.thumbnailBlob = null;
         },
         // Playback control
         updatePlaybackState({ currentTime, playing }) {

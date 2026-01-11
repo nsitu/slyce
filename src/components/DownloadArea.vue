@@ -88,6 +88,25 @@
             <p class="text-sm font-medium text-green-800 mb-2">
                 Texture Set: <code class="bg-green-100 px-1 rounded">{{ uploadedTextureSetId }}</code>
             </p>
+
+            <!-- Thumbnail preview -->
+            <div
+                v-if="uploadedThumbnailUrl"
+                class="mb-3"
+            >
+                <p class="text-xs text-green-700 mb-1">Thumbnail:</p>
+                <a
+                    :href="uploadedThumbnailUrl"
+                    target="_blank"
+                >
+                    <img
+                        :src="uploadedThumbnailUrl"
+                        alt="Texture thumbnail"
+                        class="w-24 h-24 object-cover rounded border border-green-300 hover:border-green-500 transition-colors"
+                    />
+                </a>
+            </div>
+
             <p class="text-xs text-green-700 mb-2">CDN URLs:</p>
             <ul class="text-xs text-green-700 space-y-1">
                 <li
@@ -175,6 +194,7 @@
     const uploadError = ref(null);
     const uploadedTextureSetId = ref(null);
     const uploadedUrls = ref([]);
+    const uploadedThumbnailUrl = ref(null);
 
     // Computed property for current blob URLs based on format
     const currentBlobURLs = computed(() => {
@@ -242,15 +262,25 @@
         isUploading.value = true;
         uploadSuccess.value = false;
         uploadError.value = null;
-        uploadProgress.value = 'Creating texture set...';
+        uploadProgress.value = 'Preparing upload...';
         uploadedUrls.value = [];
         uploadedTextureSetId.value = null;
+        uploadedThumbnailUrl.value = null;
 
         try {
             const blobUrls = Object.entries(currentBlobURLs.value);
             const baseName = app.fileInfo?.name?.replace(/\.[^.]+$/, '') || 'texture';
 
+            // Use thumbnail from store (captured during video processing)
+            const thumbnailBlob = app.thumbnailBlob;
+            if (thumbnailBlob) {
+                console.log('[DownloadArea] Using pre-captured thumbnail:', thumbnailBlob.size, 'bytes');
+            } else {
+                console.log('[DownloadArea] No thumbnail available');
+            }
+
             // Prepare tiles array with blobs
+            uploadProgress.value = 'Preparing tiles...';
             const tiles = [];
             for (const [tileNumber, blobUrl] of blobUrls) {
                 const response = await fetch(blobUrl);
@@ -261,13 +291,13 @@
                 });
             }
 
-            // Upload texture set with all tiles
+            // Upload texture set with all tiles and thumbnail
             const result = await uploadTextureSet({
                 name: baseName,
                 description: `Uploaded from Slyce on ${new Date().toLocaleDateString()}`,
-                tileResolution: app.tileSize || 512,
-                layerCount: app.layerCount || 60,
-                crossSectionType: app.variant || 'planes',
+                tileResolution: app.potResolution || 512,
+                layerCount: app.crossSectionCount || 60,
+                crossSectionType: app.crossSectionType || 'planes',
                 sourceMetadata: {
                     filename: app.fileInfo?.name,
                     width: app.fileInfo?.width,
@@ -276,13 +306,15 @@
                     frameCount: app.frameCount,
                 },
                 tiles,
-                onProgress: (current, total) => {
-                    uploadProgress.value = `Uploading tile ${current}/${total}...`;
+                thumbnailBlob,
+                onProgress: (step, detail) => {
+                    uploadProgress.value = detail;
                 },
             });
 
             uploadedTextureSetId.value = result.textureSetId;
             uploadedUrls.value = result.cdnUrls.map((t) => t.url);
+            uploadedThumbnailUrl.value = result.thumbnailUrl;
 
             uploadSuccess.value = true;
             uploadProgress.value = '';

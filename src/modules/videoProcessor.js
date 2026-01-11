@@ -13,6 +13,50 @@ let ktx2WorkerPool = null;
 let abortController = null;
 
 /**
+ * Create a thumbnail blob from RGBA image data
+ * Uses the first layer of the first tile as the thumbnail
+ * @param {Object} imageData - { rgba: Uint8ClampedArray, width: number, height: number }
+ * @param {Object} options - { maxSize: number, quality: number }
+ * @returns {Promise<Blob>} - JPEG blob
+ */
+async function createThumbnailFromRGBA(imageData, options = {}) {
+    const { maxSize = 512, quality = 0.85 } = options;
+    const { rgba, width, height } = imageData;
+
+    // Create canvas with original dimensions
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+    const imgData = new ImageData(new Uint8ClampedArray(rgba), width, height);
+    ctx.putImageData(imgData, 0, 0);
+
+    // Calculate scaled dimensions maintaining aspect ratio
+    let thumbWidth = width;
+    let thumbHeight = height;
+    if (width > maxSize || height > maxSize) {
+        const aspectRatio = width / height;
+        if (width > height) {
+            thumbWidth = maxSize;
+            thumbHeight = Math.round(maxSize / aspectRatio);
+        } else {
+            thumbHeight = maxSize;
+            thumbWidth = Math.round(maxSize * aspectRatio);
+        }
+    }
+
+    // Create thumbnail canvas
+    const thumbCanvas = new OffscreenCanvas(thumbWidth, thumbHeight);
+    const thumbCtx = thumbCanvas.getContext('2d');
+    thumbCtx.imageSmoothingEnabled = true;
+    thumbCtx.imageSmoothingQuality = 'high';
+    thumbCtx.drawImage(canvas, 0, 0, thumbWidth, thumbHeight);
+
+    // Convert to JPEG blob
+    const blob = await thumbCanvas.convertToBlob({ type: 'image/jpeg', quality });
+    console.log(`[VideoProcessor] Thumbnail created: ${thumbWidth}x${thumbHeight}, ${(blob.size / 1024).toFixed(1)}KB`);
+    return blob;
+}
+
+/**
  * Cleanup function to terminate the worker pool when done
  */
 const cleanupKTX2Workers = () => {
@@ -39,7 +83,7 @@ const processVideo = async (settings) => {
 
     // Abort any previous processing
     abortProcessing();
-    
+
     // Create new abort controller for this processing run
     abortController = new AbortController();
     const abortSignal = abortController.signal;
@@ -79,7 +123,7 @@ const processVideo = async (settings) => {
     if (framesSkippedByTiling > 0) {
         const skippedStart = lastTileEnd + 1;
         const skippedEnd = effectiveFrameCount;
-        app.setStatus('Processing', 
+        app.setStatus('Processing',
             `${tilePlan.tiles.length} tile(s) using frames 1-${lastTileEnd}. ` +
             `Frames ${skippedStart}-${skippedEnd} (${framesSkippedByTiling} frames) are outside tile boundaries and will be skipped.`);
     } else {
@@ -223,6 +267,16 @@ const processVideo = async (settings) => {
 
                     const { images, kind } = payload;
                     const totalTiles = tilePlan.tiles.length;
+
+                    // Capture thumbnail from first layer of first tile
+                    if (tileNumber === 0 && kind === 'ktx2' && images.length > 0) {
+                        try {
+                            const thumbnailBlob = await createThumbnailFromRGBA(images[0]);
+                            app.set('thumbnailBlob', thumbnailBlob);
+                        } catch (err) {
+                            console.warn('[VideoProcessor] Failed to create thumbnail:', err);
+                        }
+                    }
 
                     if (kind === 'ktx2') {
                         // KTX2 mode: Encode RGBA frames to KTX2 using parallel workers
