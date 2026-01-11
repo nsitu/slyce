@@ -24,7 +24,7 @@ export function useRivvonAPI() {
 
     /**
      * Create a new texture set and get upload info
-     * POST /upload/texture-set
+     * POST /texture-set
      * @param {Object} metadata - Texture set metadata
      * @param {boolean} includeUserProfile - Whether to include user profile for DB sync
      */
@@ -41,7 +41,7 @@ export function useRivvonAPI() {
             }
         }
 
-        const response = await fetch(`${API_BASE_URL}/upload/texture-set`, {
+        const response = await fetch(`${API_BASE_URL}/texture-set`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -60,13 +60,13 @@ export function useRivvonAPI() {
 
     /**
      * Upload a single tile to the texture set
-     * PUT /upload/texture-set/:setId/tile/:index
+     * PUT /texture-set/:setId/tile/:index
      */
     async function uploadTile(textureSetId, tileIndex, fileData) {
         const token = await getAccessToken()
 
         const response = await fetch(
-            `${API_BASE_URL}/upload/texture-set/${textureSetId}/tile/${tileIndex}`,
+            `${API_BASE_URL}/texture-set/${textureSetId}/tile/${tileIndex}`,
             {
                 method: 'PUT',
                 headers: {
@@ -87,13 +87,13 @@ export function useRivvonAPI() {
 
     /**
      * Mark texture set upload as complete
-     * POST /upload/texture-set/:id/complete
+     * POST /texture-set/:id/complete
      */
     async function completeTextureSet(textureSetId) {
         const token = await getAccessToken()
 
         const response = await fetch(
-            `${API_BASE_URL}/upload/texture-set/${textureSetId}/complete`,
+            `${API_BASE_URL}/texture-set/${textureSetId}/complete`,
             {
                 method: 'POST',
                 headers: {
@@ -112,7 +112,7 @@ export function useRivvonAPI() {
 
     /**
      * Upload a thumbnail for the texture set
-     * PUT /upload/texture-set/:setId/thumbnail
+     * PUT /texture-set/:setId/thumbnail
      */
     async function uploadThumbnail(textureSetId, imageBlob) {
         const token = await getAccessToken()
@@ -121,7 +121,7 @@ export function useRivvonAPI() {
         const contentType = imageBlob.type || 'image/jpeg'
 
         const response = await fetch(
-            `${API_BASE_URL}/upload/texture-set/${textureSetId}/thumbnail`,
+            `${API_BASE_URL}/texture-set/${textureSetId}/thumbnail`,
             {
                 method: 'PUT',
                 headers: {
