@@ -249,12 +249,12 @@ export function useRivvonAPI() {
 
     /**
      * Get current user's texture sets (authenticated)
-     * GET /my/textures
+     * GET /my-textures
      */
     async function getMyTextures() {
         const token = await getAccessToken()
 
-        const response = await fetch(`${API_BASE_URL}/my/textures`, {
+        const response = await fetch(`${API_BASE_URL}/my-textures`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
             },
