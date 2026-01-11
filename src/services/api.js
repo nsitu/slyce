@@ -7,7 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.rivvon.ca'
  * Must be used within Vue component context (setup or lifecycle hooks)
  */
 export function useRivvonAPI() {
-    const { getAccessTokenSilently, isAuthenticated } = useAuth0()
+    const { getAccessTokenSilently, isAuthenticated, user } = useAuth0()
 
     /**
      * Get access token for API requests
@@ -25,9 +25,21 @@ export function useRivvonAPI() {
     /**
      * Create a new texture set and get upload info
      * POST /upload/texture-set
+     * @param {Object} metadata - Texture set metadata
+     * @param {boolean} includeUserProfile - Whether to include user profile for DB sync
      */
-    async function createTextureSet(metadata) {
+    async function createTextureSet(metadata, includeUserProfile = true) {
         const token = await getAccessToken()
+
+        // Include user profile for database sync if requested
+        const payload = { ...metadata }
+        if (includeUserProfile && user.value) {
+            payload.userProfile = {
+                name: user.value.name,
+                email: user.value.email,
+                picture: user.value.picture,
+            }
+        }
 
         const response = await fetch(`${API_BASE_URL}/upload/texture-set`, {
             method: 'POST',
@@ -35,7 +47,7 @@ export function useRivvonAPI() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify(metadata),
+            body: JSON.stringify(payload),
         })
 
         if (!response.ok) {
