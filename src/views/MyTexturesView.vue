@@ -146,7 +146,7 @@
                         <!-- Actions -->
                         <div class="flex gap-2">
                             <a
-                                :href="`https://rivvon.ca/texture/${texture.id}`"
+                                :href="`https://rivvon.ca/#${texture.id}`"
                                 target="_blank"
                                 class="flex-1 text-center px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
                             >
