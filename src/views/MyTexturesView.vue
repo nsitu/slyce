@@ -3,22 +3,6 @@
         <Header />
 
         <div class="max-w-6xl mx-auto px-4 py-8">
-            <!-- Navigation Tabs -->
-            <div class="flex gap-4 mb-8 border-b border-gray-200">
-                <router-link
-                    to="/"
-                    class="tab-link pb-3 px-1 text-gray-500 hover:text-gray-700"
-                >
-                    Create
-                </router-link>
-                <router-link
-                    to="/my-textures"
-                    class="tab-link pb-3 px-1 text-purple-600 border-b-2 border-purple-600 font-medium"
-                >
-                    My Textures
-                </router-link>
-            </div>
-
             <h1 class="text-2xl font-bold mb-6">My Textures</h1>
 
             <!-- Loading State -->
@@ -295,9 +279,5 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-    }
-
-    .tab-link {
-        transition: color 0.2s, border-color 0.2s;
     }
 </style>
