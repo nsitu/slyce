@@ -41,6 +41,7 @@
     </div>
 </template>
 
+
 <style scoped>
     div {
         padding-bottom: 4rem;
