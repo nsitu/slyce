@@ -15,7 +15,7 @@
 
 
             <a href="https://rivvon.ca"><img
-                    style="width: 8rem;"
+                    style="width: 9rem;"
                     src="/rivvon-black.svg"
                 /></a>
 

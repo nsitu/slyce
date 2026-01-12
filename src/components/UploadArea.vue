@@ -26,7 +26,7 @@
         <span>or</span>
         <button
             @click=" fileInput.click()"
-            class="bg-blue-500 text-white px-4 py-2 rounded-md"
+            class="browse-button"
             id="browse-button"
         >Browse...</button>
         <input
@@ -53,5 +53,20 @@
 
     #browse-button {
         cursor: pointer;
+    }
+
+    .browse-button {
+        background-color: #4a4a4a;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+
+    .browse-button:hover {
+        background-color: #1a1a1a;
     }
 </style>

@@ -36,7 +36,7 @@
             <!-- Not Authenticated -->
             <div
                 v-else-if="!isAuthenticated"
-                class="text-center py-12 bg-gray-50 rounded-lg"
+                class="text-center py-12 bg-gray-50"
             >
                 <p class="text-gray-600 mb-4">Please log in to view your textures.</p>
             </div>
@@ -44,7 +44,7 @@
             <!-- Error State -->
             <div
                 v-else-if="error"
-                class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+                class="bg-red-50 border border-red-200 p-4 mb-6"
             >
                 <p class="text-red-700">{{ error }}</p>
                 <button
@@ -58,12 +58,12 @@
             <!-- Empty State -->
             <div
                 v-else-if="textures.length === 0"
-                class="text-center py-12 bg-gray-50 rounded-lg"
+                class="text-center py-12 bg-gray-50"
             >
                 <p class="text-gray-600 mb-4">You haven't uploaded any textures yet.</p>
                 <router-link
                     to="/"
-                    class="inline-block bg-purple-500 text-white px-6 py-2 rounded-md hover:bg-purple-600 transition-colors"
+                    class="inline-block action-button px-6 py-2"
                 >
                     Create Your First Texture
                 </router-link>
@@ -77,7 +77,7 @@
                 <div
                     v-for="texture in textures"
                     :key="texture.id"
-                    class="texture-card bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                    class="texture-card bg-white border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                 >
                     <!-- Thumbnail -->
                     <div class="aspect-square bg-gray-100 relative">
@@ -109,7 +109,7 @@
                         <!-- Public/Private Badge -->
                         <span
                             :class="texture.is_public ? 'bg-green-500' : 'bg-gray-500'"
-                            class="absolute top-2 right-2 px-2 py-0.5 text-xs text-white rounded-full"
+                            class="absolute top-2 right-2 px-2 py-0.5 text-xs text-white"
                         >
                             {{ texture.is_public ? 'Public' : 'Private' }}
                         </span>
@@ -132,14 +132,14 @@
                             <a
                                 :href="`https://rivvon.ca/#${texture.id}`"
                                 target="_blank"
-                                class="flex-1 text-center px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
+                                class="flex-1 text-center px-3 py-1.5 text-sm action-button"
                             >
                                 View
                             </a>
                             <button
                                 @click="confirmDelete(texture)"
                                 :disabled="deletingId === texture.id"
-                                class="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors disabled:opacity-50"
+                                class="px-3 py-1.5 text-sm action-button disabled:opacity-50"
                             >
                                 <span v-if="deletingId === texture.id">...</span>
                                 <span v-else>Delete</span>
@@ -156,7 +156,7 @@
             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
             @click.self="textureToDelete = null"
         >
-            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <div class="bg-white p-6 max-w-md w-full mx-4 shadow-xl">
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Texture</h3>
                 <p class="text-gray-600 mb-4">
                     Are you sure you want to delete "<strong>{{ textureToDelete.name }}</strong>"?
@@ -202,7 +202,15 @@
     const deletingId = ref(null)
 
     const formatDate = (dateStr) => {
-        const date = new Date(dateStr)
+        // Handle Unix timestamps (seconds or milliseconds)
+        let date
+        if (typeof dateStr === 'number') {
+            // If timestamp is in seconds (less than year 3000), convert to milliseconds
+            date = new Date(dateStr < 10000000000 ? dateStr * 1000 : dateStr)
+        } else {
+            date = new Date(dateStr)
+        }
+
         return date.toLocaleDateString(undefined, {
             year: 'numeric',
             month: 'short',
@@ -279,5 +287,20 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
+    }
+
+    .action-button {
+        background-color: #f0f0f0;
+        color: #333;
+        border: none;
+        border-radius: 0;
+        font-weight: 500;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .action-button:hover {
+        background-color: #4a4a4a;
+        color: white;
     }
 </style>

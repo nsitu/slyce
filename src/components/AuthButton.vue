@@ -115,7 +115,7 @@
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 0.9rem;
     font-weight: 500;
@@ -123,14 +123,12 @@
   }
 
   .btn-login {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-color: #4a4a4a;
     color: white;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
   }
 
   .btn-login:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+    background-color: #1a1a1a;
   }
 
   .btn-logout {
@@ -158,13 +156,13 @@
     display: flex;
     align-items: center;
     padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border-radius: 0;
     font-size: 0.9rem;
     font-weight: 500;
     background-color: #f0f0f0;
     color: #333;
     text-decoration: none;
-    transition: all 0.2s;
+    transition: background-color 0.2s;
   }
 
   .nav-link:hover {
@@ -172,14 +170,11 @@
   }
 
   .nav-link-active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-color: #4a4a4a;
     color: white;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
   }
 
   .nav-link-active:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-color: #1a1a1a;
   }
 </style>
