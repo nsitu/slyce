@@ -24,7 +24,11 @@ export async function downloadAllAsZip(blobURLs, fileInfo, format, appStore) {
             width: fileInfo?.width,
             height: fileInfo?.height,
             duration: fileInfo?.duration,
-            frameCount: appStore?.frameCount,
+            sourceFrameCount: appStore?.frameCount,
+            // Actual frames sampled (may be limited by user via framesToSample setting)
+            sampledFrameCount: appStore?.framesToSample > 0
+                ? Math.min(appStore.framesToSample, appStore.frameCount)
+                : appStore?.frameCount,
         },
 
         // Processing settings

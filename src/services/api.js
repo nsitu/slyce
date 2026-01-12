@@ -151,6 +151,12 @@ export function useRivvonAPI() {
      * @param {number} options.layerCount - Layers per tile
      * @param {string} options.crossSectionType - 'planes' or 'waves'
      * @param {Object} options.sourceMetadata - Source file metadata
+     * @param {string} options.sourceMetadata.filename - Original filename
+     * @param {number} options.sourceMetadata.width - Source video width
+     * @param {number} options.sourceMetadata.height - Source video height
+     * @param {number} options.sourceMetadata.duration - Source video duration
+     * @param {number} options.sourceMetadata.sourceFrameCount - Total frames in source video
+     * @param {number} options.sourceMetadata.sampledFrameCount - Actual frames sampled (may be limited by user)
      * @param {Array<{index: number, blob: Blob}>} options.tiles - Array of tile data
      * @param {Blob} options.thumbnailBlob - Optional thumbnail image blob
      * @param {Function} options.onProgress - Progress callback (step, detail)

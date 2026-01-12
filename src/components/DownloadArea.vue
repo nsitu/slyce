@@ -321,6 +321,11 @@
             const defaultName = app.fileInfo?.name?.replace(/\.[^.]+$/, '') || 'texture';
             const finalName = textureName.value.trim() || defaultName;
 
+            // Calculate effective frame count (what was actually sampled)
+            const effectiveFrameCount = app.framesToSample > 0
+                ? Math.min(app.framesToSample, app.frameCount)
+                : app.frameCount;
+
             // Use thumbnail from store (captured during video processing)
             const thumbnailBlob = app.thumbnailBlob;
             if (thumbnailBlob) {
@@ -354,7 +359,8 @@
                     width: app.fileInfo?.width,
                     height: app.fileInfo?.height,
                     duration: app.fileInfo?.duration,
-                    frameCount: app.frameCount,
+                    sourceFrameCount: app.frameCount,
+                    sampledFrameCount: effectiveFrameCount,
                 },
                 tiles,
                 thumbnailBlob,
